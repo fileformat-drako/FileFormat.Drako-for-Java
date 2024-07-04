@@ -1,7 +1,7 @@
-# Openize.Drako
+# FileFormat.Drako
 
 
-Openize.Drako was ported from [Google Draco](https://github.com/google/draco).
+FileFormat.Drako was ported from [Google Draco](https://github.com/google/draco).
 
 
 ### 1. Installation
@@ -9,7 +9,7 @@ Openize.Drako was ported from [Google Draco](https://github.com/google/draco).
 Add the following code in your pom.xml:
 ```
 <dependency>
-  <groupId>org.openize</groupId>
+  <groupId>org.fileformat</groupId>
   <artifactId>drako</artifactId>
   <version>1.0</version>
 </dependency>
@@ -77,14 +77,14 @@ Files.writeString(Paths.get("output.obj"), sb.toString());
 ```
 
 ## License
-Openize.Drako is available under [Openize License](LICENSE).
+FileFormat.Drako is available under [Openize License](LICENSE).
 > [!CAUTION]
-> Openize does not and cannot grant You a patent license for the utilization of [Google Draco](https://github.com/google/draco) compression/decompression technologies.
+> FileFormat does not and cannot grant You a patent license for the utilization of [Google Draco](https://github.com/google/draco) compression/decompression technologies.
 
 ## OSS Notice
 Sample files used for tests and located in the "TestsData" folder belong to [Google Draco](https://github.com/google/draco) and are used according to [Apache License 2.0](https://github.com/google/draco/blob/main/LICENSE)
 
 
 ## Coming updates
-Openize.Drako will receive new features and regular updates to stay in sync with the latest versions of [Google Draco](https://github.com/google/draco). We appreciate your patience as we work on these improvements. Stay tuned for more updates soon.
+FileFormat.Drako will receive new features and regular updates to stay in sync with the latest versions of [Google Draco](https://github.com/google/draco). We appreciate your patience as we work on these improvements. Stay tuned for more updates soon.
 

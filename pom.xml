@@ -1,6 +1,6 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>org.openize</groupId>
+  <groupId>org.fileformat</groupId>
   <artifactId>drako</artifactId>
   <version>1.4.0</version>
   <name>drako</name>
@@ -44,11 +44,11 @@
               <goal>shade</goal>
             </goals>
             <configuration>
-                <shadedArtifactAttached>true</shadedArtifactAttached>
+              <shadedArtifactAttached>true</shadedArtifactAttached>
               <relocations>
                 <relocation>
                   <pattern>com.aspose.csporter.helpers</pattern>
-                  <shadedPattern>org.openize.drako.utils</shadedPattern>
+                  <shadedPattern>org.fileformat.drako.utils</shadedPattern>
                 </relocation>
               </relocations>
             </configuration>
@@ -101,11 +101,11 @@
     </plugins>
   </build>
   <repositories>
-  <repository>
-    <id>repo</id>
-    <url>file://${basedir}/libs</url>
-  </repository>
-</repositories>
+    <repository>
+      <id>repo</id>
+      <url>file://${basedir}/libs</url>
+    </repository>
+  </repositories>
   <dependencies>
     <dependency>
       <groupId>org.hamcrest</groupId>
