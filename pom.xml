@@ -1,9 +1,29 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>org.fileformat</groupId>
+  <groupId>dev.fileformat</groupId>
   <artifactId>drako</artifactId>
-  <version>1.4.0</version>
+  <version>1.4.1</version>
   <name>drako</name>
+  <description>FileFormat.Drako for Java allows you to encode and decode Google Draco files with Java, Kotlin, Scala.</description>
+  <url>https://products.fileformat.dev/drako/java/</url>
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>https://raw.githubusercontent.com/fileformat-drako/FileFormat.Drako-for-Java/main/LICENSE</url>
+    </license>
+  </licenses>
+  <developers>
+    <developer>
+      <id>lexchou</id>
+      <name>FileFormat</name>
+      <organization>Openize Pty Ltd.</organization>
+      <organizationUrl>https://www.fileformat.dev</organizationUrl>
+    </developer>
+  </developers>
+  <scm>
+    <tag />
+    <url>https://github.com/fileformat-drako/FileFormat.Drako-for-Java</url>
+  </scm>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
@@ -21,6 +41,42 @@
       </resource>
     </resources>
     <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.6</version>
+            <executions>
+                <execution>
+                    <id>sign-artifacts</id>
+                    <phase>verify</phase>
+                    <goals>
+                        <goal>sign</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>2.2.1</version>
+            <executions>
+                <execution>
+                    <id>attach-sources</id>
+                    <goals>
+                        <goal>jar-no-fork</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
+      <plugin>
+        <groupId>org.sonatype.central</groupId>
+        <artifactId>central-publishing-maven-plugin</artifactId>
+        <version>0.6.0</version>
+        <extensions>true</extensions>
+        <configuration>
+          <publishingServerId>central</publishingServerId>
+        </configuration>
+      </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>2.3.2</version>
@@ -35,32 +91,19 @@
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-shade-plugin</artifactId>
-        <version>3.2.2</version>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>2.9.1</version>
+        <configuration>
+          <source>8</source>
+        </configuration>
         <executions>
           <execution>
-            <phase>package</phase>
+            <id>attach-javadocs</id>
             <goals>
-              <goal>shade</goal>
+              <goal>jar</goal>
             </goals>
-            <configuration>
-              <shadedArtifactAttached>true</shadedArtifactAttached>
-              <relocations>
-                <relocation>
-                  <pattern>com.aspose.csporter.helpers</pattern>
-                  <shadedPattern>org.fileformat.drako.utils</shadedPattern>
-                </relocation>
-              </relocations>
-            </configuration>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-maven-plugin</artifactId>
-        <configuration>
-          <includeSystemScope>true</includeSystemScope>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
@@ -80,6 +123,7 @@
                 <source>src/encoder</source>
                 <source>src/utils</source>
                 <source>src/generated</source>
+                <source>src/helpers</source>
               </sources>
             </configuration>
           </execution>
@@ -100,12 +144,6 @@
       </plugin>
     </plugins>
   </build>
-  <repositories>
-    <repository>
-      <id>repo</id>
-      <url>file://${basedir}/libs</url>
-    </repository>
-  </repositories>
   <dependencies>
     <dependency>
       <groupId>org.hamcrest</groupId>
@@ -119,13 +157,5 @@
       <version>4.12</version>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>com.aspose.csporter</groupId>
-      <artifactId>helpers</artifactId>
-      <version>1.0</version>
-      <scope>compile</scope>
-    </dependency>
   </dependencies>
-  <modules>
-  </modules>
 </project>

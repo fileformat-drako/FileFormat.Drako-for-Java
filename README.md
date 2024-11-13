@@ -9,9 +9,9 @@ FileFormat.Drako was ported from [Google Draco](https://github.com/google/draco)
 Add the following code in your pom.xml:
 ```
 <dependency>
-  <groupId>org.fileformat</groupId>
+  <groupId>dev.fileformat</groupId>
   <artifactId>drako</artifactId>
-  <version>1.0</version>
+  <version>1.4.1</version>
 </dependency>
 ```
 
@@ -75,6 +75,7 @@ for (int i = 0; i < dm.getNumFaces(); i++)
 
 Files.writeString(Paths.get("output.obj"), sb.toString());
 ```
+
 
 ## License
 FileFormat.Drako is available under [Openize License](LICENSE).
