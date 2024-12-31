@@ -16,70 +16,36 @@ class RAnsSymbolDecoder extends RAnsBitCodec
         this.ans = new RAnsDecoder(ransPrecisionBits);
     }
     
-    public boolean create(DecoderBuffer buffer)
+    public void create(DecoderBuffer buffer)
+        throws DrakoException
     {
-        final int[] ref0 = new int[1];
-        final int[] ref1 = new int[1];
-        final byte[] ref2 = new byte[1];
-        final byte[] ref3 = new byte[1];
         if (buffer.getBitstreamVersion() == 0)
-            return DracoUtils.failed();
+            throw DracoUtils.failed();
         // Decode the number of alphabet symbols.
         if (buffer.getBitstreamVersion() < 20)
         {
-            if (!buffer.decode6(ref0))
-            {
-                numSymbols = ref0[0];
-                return DracoUtils.failed();
-            }
-            else
-            {
-                numSymbols = ref0[0];
-            }
-            
+            this.numSymbols = buffer.decodeI32();
         }
         else
         {
-            int n;
-            if (!Decoding.decodeVarint(ref1, buffer))
-            {
-                n = ref1[0];
-                return DracoUtils.failed();
-            }
-            else
-            {
-                n = ref1[0];
-            }
-            
+            int n = Decoding.decodeVarintU32(buffer);
             this.numSymbols = n;
         }
         
         this.probabilityTable = new int[numSymbols];
         if (numSymbols == 0)
-            return true;
+            return;
         // Decode the table.
         for (int i = 0; i < numSymbols; ++i)
         {
             int prob = 0;
-            byte byteProb = 0;
-            // Decode the first byte and extract the number of extra bytes we need to
-            // get.
-            if (!buffer.decode3(ref2))
-            {
-                byteProb = ref2[0];
-                return DracoUtils.failed();
-            }
-            else
-            {
-                byteProb = ref2[0];
-            }
-            
+            byte byteProb = buffer.decodeU8();
             int token = 0xff & byteProb & 3;
             if (token == 3)
             {
                 int offset = (0xff & byteProb) >>> 2;
                 if (i + offset >= numSymbols)
-                    return DracoUtils.failed();
+                    throw DracoUtils.failed();
                 // Set zero probability for all symbols in the specified range.
                 for (int j = 0; j < (offset + 1); ++j)
                 {
@@ -95,17 +61,7 @@ class RAnsSymbolDecoder extends RAnsBitCodec
                 prob = (int)((0xff & byteProb) >>> 2);
                 for (int b = 0; b < extraBytes; ++b)
                 {
-                    byte eb;
-                    if (!buffer.decode3(ref3))
-                    {
-                        eb = ref3[0];
-                        return DracoUtils.failed();
-                    }
-                    else
-                    {
-                        eb = ref3[0];
-                    }
-                    
+                    byte eb = buffer.decodeU8();
                     // Shift 8 bits for each extra byte and subtract 2 for the two first bits.
                     prob |= (int)(0xff & eb) << (8 * (b + 1) - 2);
                 }
@@ -116,54 +72,32 @@ class RAnsSymbolDecoder extends RAnsBitCodec
         }
         
         if (!ans.buildLookupTable(probabilityTable, numSymbols))
-            return DracoUtils.failed();
-        return true;
+            throw DracoUtils.failed();
     }
     
-    public boolean startDecoding(DecoderBuffer buffer)
+    public void startDecoding(DecoderBuffer buffer)
+        throws DrakoException
     {
         long bytesEncoded;
-        final long[] ref4 = new long[1];
-        final long[] ref5 = new long[1];
         // Decode the number of bytes encoded by the encoder.
         if (buffer.getBitstreamVersion() < 20)
         {
-            if (!buffer.decode(ref4))
-            {
-                bytesEncoded = ref4[0];
-                return DracoUtils.failed();
-            }
-            else
-            {
-                bytesEncoded = ref4[0];
-            }
-            
+            bytesEncoded = buffer.decodeI64();
         }
         else
         {
-            long n;
-            if (!Decoding.decodeVarint(ref5, buffer))
-            {
-                n = ref5[0];
-                return DracoUtils.failed();
-            }
-            else
-            {
-                n = ref5[0];
-            }
-            
+            long n = Decoding.decodeVarintU64(buffer);
             bytesEncoded = n;
         }
         
         
         if (bytesEncoded > buffer.getRemainingSize())
-            return DracoUtils.failed();
+            throw DracoUtils.failed();
         BytePointer dataHead = BytePointer.add(buffer.getPointer(), buffer.getDecodedSize());
         // Advance the buffer past the rANS data.
         buffer.advance((int)bytesEncoded);
         if (ans.readInit(dataHead, (int)bytesEncoded) != 0)
-            return DracoUtils.failed();
-        return true;
+            throw DracoUtils.failed();
     }
     
     public int getNumSymbols()

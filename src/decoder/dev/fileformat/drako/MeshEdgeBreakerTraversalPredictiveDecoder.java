@@ -29,29 +29,17 @@ class MeshEdgeBreakerTraversalPredictiveDecoder extends MeshEdgeBreakerTraversal
     }
     
     @Override
-    public boolean start(DecoderBuffer[] out_buffer)
+    public DecoderBuffer start()
+        throws DrakoException
     {
-        final int[] ref0 = new int[1];
-        if (!super.start(out_buffer))
-            return DracoUtils.failed();
-        int num_split_symbols;
-        if (!out_buffer[0].decode6(ref0))
-        {
-            num_split_symbols = ref0[0];
-            return DracoUtils.failed();
-        }
-        else
-        {
-            num_split_symbols = ref0[0];
-        }
-        
+        DecoderBuffer out_buffer = super.start();
+        int num_split_symbols = out_buffer.decodeI32();
         // Add one vertex for each split symbol.
         num_vertices_ += num_split_symbols;
         // Set the valences of all initial vertices to 0.
         vertex_valences_ = vertex_valences_ == null ? new int[num_vertices_] : Arrays.copyOf(vertex_valences_, num_vertices_);
-        if (!prediction_decoder_.startDecoding(out_buffer[0]))
-            return DracoUtils.failed();
-        return true;
+        prediction_decoder_.startDecoding(out_buffer);
+        return out_buffer;
     }
     
     @Override

@@ -105,38 +105,27 @@ final class DecoderBuffer
         pos += bytes;
     }
     
-    public boolean startBitDecoding(boolean decodeSize, long[] outSize)
+    public long startBitDecoding(boolean decodeSize)
+        throws DrakoException
     {
-        final long[] ref0 = new long[1];
-        outSize[0] = 0L;
+        long outSize = 0L;
         if (decodeSize)
         {
             if (this.getBitstreamVersion() < 22)
             {
-                if (!this.decode(outSize))
-                    return false;
+                outSize = this.decodeI64();
             }
             else
             {
-                long n;
-                if (!Decoding.decodeVarint(ref0, this))
-                {
-                    n = ref0[0];
-                    return false;
-                }
-                else
-                {
-                    n = ref0[0];
-                }
-                
-                outSize[0] = n;
+                long n = Decoding.decodeVarintU64(this);
+                outSize = n;
             }
             
         }
         
         this.bitMode = true;
         bitDecoder.load(BytePointer.add(data, pos), length - pos);
-        return true;
+        return outSize;
     }
     
     public void endBitDecoding()
@@ -198,36 +187,64 @@ final class DecoderBuffer
         return true;
     }
     
-    public boolean decode(short[] val)
+    public float decodeF32()
+        throws DrakoException
     {
-        if (!this.remainingIsEnough(2))
-        {
-            val[0] = 0;
-            return false;
-        }
-        else
-        {
-            val[0] = data.toUInt16LE(pos);
-            pos += 2;
-            return true;
-        }
-        
+        if (!this.decode(tmp, 4))
+            throw DracoUtils.failed();
+        return BitUtils.getFloat(tmp, 0);
     }
     
-    public boolean decode(long[] val)
+    public byte decodeI8()
+        throws DrakoException
+    {
+        return this.decodeU8();
+    }
+    
+    public byte decodeU8()
+        throws DrakoException
+    {
+        if (!this.remainingIsEnough(1))
+            throw DracoUtils.failed();
+        byte val = this.data.get(pos);
+        pos++;
+        return val;
+    }
+    
+    public short decodeU16()
+        throws DrakoException
+    {
+        if (!this.remainingIsEnough(2))
+            throw DracoUtils.failed();
+        short val = data.toUInt16LE(pos);
+        pos += 2;
+        return val;
+    }
+    
+    public long decodeI64()
+        throws DrakoException
     {
         if (!this.remainingIsEnough(8))
-        {
-            val[0] = 0L;
-            return false;
-        }
-        else
-        {
-            val[0] = data.toUInt64LE(pos);
-            pos += 8;
-            return true;
-        }
-        
+            throw DracoUtils.failed();
+        long val = data.toUInt64LE(pos);
+        pos += 8;
+        return val;
+    }
+    
+    public int decodeU32()
+        throws DrakoException
+    {
+        return this.decodeI32();
+    }
+    
+    public int decodeI32()
+        throws DrakoException
+    {
+        if (!this.remainingIsEnough(4))
+            throw DracoUtils.failed();
+        int val = data.toUInt32LE(pos);
+        pos += 4;
+        return val;
     }
     
     private boolean remainingIsEnough(int size)
@@ -293,79 +310,6 @@ final class DecoderBuffer
         catch(Exception e)
         {
             throw new RuntimeException(e);
-        }
-        
-    }
-    
-    public boolean decode2(byte[] val)
-    {
-        byte tmp;
-        final byte[] ref1 = new byte[1];
-        if (this.decode3(ref1))
-        {
-            tmp = ref1[0];
-            val[0] = tmp;
-            return true;
-        }
-        else
-        {
-            tmp = ref1[0];
-        }
-        
-        val[0] = 0;
-        return false;
-    }
-    
-    public boolean decode3(byte[] val)
-    {
-        if (!this.remainingIsEnough(1))
-        {
-            val[0] = 0;
-            return false;
-        }
-        else
-        {
-            val[0] = this.data.get(pos);
-            pos++;
-            return true;
-        }
-        
-    }
-    
-    public boolean decode4(float[] val)
-    {
-        if (!this.decode(tmp, 4))
-        {
-            val[0] = 0F;
-            return false;
-        }
-        
-        val[0] = BitUtils.getFloat(tmp, 0);
-        return true;
-    }
-    
-    public boolean decode5(int[] val)
-    {
-        int v;
-        final int[] ref2 = new int[1];
-        boolean ret = this.decode6(ref2);
-        v = ref2[0];
-        val[0] = v;
-        return ret;
-    }
-    
-    public boolean decode6(int[] val)
-    {
-        if (!this.remainingIsEnough(4))
-        {
-            val[0] = 0;
-            return false;
-        }
-        else
-        {
-            val[0] = data.toUInt32LE(pos);
-            pos += 4;
-            return true;
         }
         
     }

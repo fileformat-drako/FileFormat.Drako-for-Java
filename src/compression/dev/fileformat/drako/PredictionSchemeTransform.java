@@ -79,18 +79,17 @@ class PredictionSchemeTransform
      *  Encode any transform specific data.
      *
      */
-    public boolean encodeTransformData(EncoderBuffer buffer)
+    public void encodeTransformData(EncoderBuffer buffer)
     {
-        return true;
     }
     
     /**
      *  Decodes any transform specific data. Called before Initialize() method.
      *
      */
-    public boolean decodeTransformData(DecoderBuffer buffer)
+    public void decodeTransformData(DecoderBuffer buffer)
+        throws DrakoException
     {
-        return true;
     }
     
     /**

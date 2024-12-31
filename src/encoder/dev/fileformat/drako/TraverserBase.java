@@ -52,7 +52,8 @@ abstract class TraverserBase<TCornerTable extends ICornerTable> implements ICorn
         is_vertex_visited_[vert_id] = true;
     }
     
-    public abstract boolean traverseFromCorner(int cornerId);
+    public abstract void traverseFromCorner(int cornerId)
+        throws DrakoException;
     
     @Override
     public abstract void onTraversalStart();

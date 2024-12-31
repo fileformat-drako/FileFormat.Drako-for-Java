@@ -20,40 +20,36 @@ class SequentialQuantizationAttributeEncoder extends SequentialIntegerAttributeE
     }
     
     @Override
-    public boolean initialize(PointCloudEncoder encoder, int attributeId)
+    public void initialize(PointCloudEncoder encoder, int attributeId)
+        throws DrakoException
     {
-        if (!super.initialize(encoder, attributeId))
-            return false;
+        super.initialize(encoder, attributeId);
         PointAttribute attribute = this.getEncoder().getPointCloud().attribute(attributeId);
         if (attribute.getDataType() != DataType.FLOAT32)
-            return false;
+            throw DracoUtils.failed();
         int quantization_bits = encoder.getOptions().getQuantizationBits(attribute);
         if (quantization_bits < 1)
-            return false;
+            throw DracoUtils.failed();
         {
             // Compute quantization settings from the attribute values.
             attribute_quantization_transform_.computeParameters(attribute, quantization_bits);
         }
         
-        
-        return true;
     }
     
     @Override
-    public boolean encodeDataNeededByPortableTransform(EncoderBuffer out_buffer)
+    public void encodeDataNeededByPortableTransform(EncoderBuffer out_buffer)
+        throws DrakoException
     {
-        return attribute_quantization_transform_.encodeParameters(out_buffer);
+        attribute_quantization_transform_.encodeParameters(out_buffer);
     }
     
     @Override
-    protected boolean prepareValues(int[] pointIds, int numPoints)
+    protected void prepareValues(int[] pointIds, int numPoints)
     {
         PointAttribute portable_attribute = attribute_quantization_transform_.initTransformedAttribute(this.attribute, pointIds.length);
-        if (!attribute_quantization_transform_.transformAttribute(this.attribute, pointIds, portable_attribute))
-            return false;
+        attribute_quantization_transform_.transformAttribute(this.attribute, pointIds, portable_attribute);
         this.portableAttribute = portable_attribute;
-        
-        return true;
     }
     
     public SequentialQuantizationAttributeEncoder()

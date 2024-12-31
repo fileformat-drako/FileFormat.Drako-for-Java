@@ -47,7 +47,7 @@ final class IntVector implements Struct<IntVector>, Serializable
         this.y = src.y;
     }
     
-    static final long serialVersionUID = 1512551028L;
+    static final long serialVersionUID = 1316331550L;
     @Override
     public int hashCode()
     {

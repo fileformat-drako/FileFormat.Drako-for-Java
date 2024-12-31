@@ -42,7 +42,7 @@ class RAnsDecoder
             this.cumProb = src.cumProb;
         }
         
-        static final long serialVersionUID = 612758677L;
+        static final long serialVersionUID = 1044714435L;
         @Override
         public int hashCode()
         {
@@ -99,7 +99,7 @@ class RAnsDecoder
             this.cumProb = src.cumProb;
         }
         
-        static final long serialVersionUID = -72852203L;
+        static final long serialVersionUID = 31145064L;
         @Override
         public int hashCode()
         {
@@ -181,7 +181,7 @@ class RAnsDecoder
         else
             return 1;
         this.state += lRansBase;
-        if (this.state >= (lRansBase * IO_BASE))
+        if ((0xffffffffl & this.state) >= (lRansBase * IO_BASE))
             return 1;
         return 0;
     }
@@ -193,7 +193,7 @@ class RAnsDecoder
     
     public boolean readerHasError()
     {
-        return this.state < lRansBase && (this.bufOffset == 0);
+        return (0xffffffffl & this.state) < lRansBase && (this.bufOffset == 0);
     }
     
     public int read()
@@ -201,7 +201,7 @@ class RAnsDecoder
         int rem;
         int quo;
         ransDecSym sym = new ransDecSym();
-        while (this.state < lRansBase && (this.bufOffset > 0))
+        while ((0xffffffffl & this.state) < lRansBase && (this.bufOffset > 0))
         {
             this.state = (int)(this.state * IO_BASE + (0xff & this.buf.get(--this.bufOffset)));
         }

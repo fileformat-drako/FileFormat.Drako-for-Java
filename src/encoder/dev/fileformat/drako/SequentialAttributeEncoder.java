@@ -32,13 +32,13 @@ class SequentialAttributeEncoder
      *  other places.
      *
      */
-    public boolean initialize(PointCloudEncoder encoder, int attributeId)
+    public void initialize(PointCloudEncoder encoder, int attributeId)
+        throws DrakoException
     {
         
         this.encoder = encoder;
         this.attribute = encoder.getPointCloud().attribute(attributeId);
         this.attributeId = attributeId;
-        return true;
     }
     
     /**
@@ -46,48 +46,43 @@ class SequentialAttributeEncoder
      *  standalone encoding of an attribute without an PointCloudEncoder.
      *
      */
-    public boolean initializeStandalone(PointAttribute attribute)
+    public void initializeStandalone(PointAttribute attribute)
     {
         
         this.attribute = attribute;
         this.attributeId = -1;
-        return true;
     }
     
-    public boolean transformAttributeToPortableFormat(int[] point_ids)
+    public void transformAttributeToPortableFormat(int[] point_ids)
     {
         // Default implementation doesn't transform the input data.
-        return true;
     }
     
-    public boolean encodePortableAttribute(int[] point_ids, EncoderBuffer out_buffer)
+    public void encodePortableAttribute(int[] point_ids, EncoderBuffer out_buffer)
+        throws DrakoException
     {
         // Lossless encoding of the input values.
-        if (!this.encodeValues(point_ids, out_buffer))
-            return false;
-        return true;
+        this.encodeValues(point_ids, out_buffer);
     }
     
-    public boolean encodeDataNeededByPortableTransform(EncoderBuffer out_buffer)
+    public void encodeDataNeededByPortableTransform(EncoderBuffer out_buffer)
+        throws DrakoException
     {
         // Default implementation doesn't transform the input data.
-        return true;
     }
     
-    protected boolean setPredictionSchemeParentAttributes(PredictionScheme ps)
+    protected void setPredictionSchemeParentAttributes(PredictionScheme ps)
+        throws DrakoException
     {
         for (int i = 0; i < ps.getNumParentAttributes(); ++i)
         {
             int att_id = encoder.getPointCloud().getNamedAttributeId(ps.getParentAttributeType(i));
             if (att_id == -1)
-                return false;
+                throw DracoUtils.failed();
             // Requested attribute does not exist.
-            if (!ps.setParentAttribute(encoder.getPortableAttribute(att_id)))
-                return false;
+            ps.setParentAttribute(encoder.getPortableAttribute(att_id));
         }
         
-        
-        return true;
     }
     
     /**
@@ -97,9 +92,9 @@ class SequentialAttributeEncoder
      *
      */
     public boolean encode(int[] pointIds, EncoderBuffer outBuffer)
+        throws DrakoException
     {
-        if (!this.encodeValues(pointIds, outBuffer))
-            return false;
+        this.encodeValues(pointIds, outBuffer);
         if (isParentEncoder && this.isLossyEncoder())
         {
             if (!this.prepareLossyAttributeData())
@@ -161,20 +156,20 @@ class SequentialAttributeEncoder
      *  cannot be used).
      *
      */
-    protected boolean initPredictionScheme(PredictionScheme ps)
+    protected void initPredictionScheme(PredictionScheme ps)
+        throws DrakoException
     {
         
         for (int i = 0; i < ps.getNumParentAttributes(); ++i)
         {
             int attId = encoder.getPointCloud().getNamedAttributeId(ps.getParentAttributeType(i));
             if (attId == -1)
-                return false;
+                throw DracoUtils.failed();
             // Requested attribute does not exist.
             parentAttributes.add(attId);
             encoder.markParentAttribute(attId);
         }
         
-        return true;
     }
     
     /**
@@ -182,7 +177,8 @@ class SequentialAttributeEncoder
      *  for specialized  encoders.
      *
      */
-    protected boolean encodeValues(int[] pointIds, EncoderBuffer outBuffer)
+    protected void encodeValues(int[] pointIds, EncoderBuffer outBuffer)
+        throws DrakoException
     {
         int entrySize = attribute.getByteStride();
         byte[] valueData = new byte[entrySize];
@@ -194,7 +190,6 @@ class SequentialAttributeEncoder
             outBuffer.encode(valueData, entrySize);
         }
         
-        return true;
     }
     
     /**

@@ -141,7 +141,7 @@ class MeshEdgeBreakerEncoderImpl implements IMeshEdgeBreakerEncoder
      *  Returns false on error.
      *
      */
-    public boolean initAttributeData()
+    public void initAttributeData()
     {
         int numAttributes = mesh.getNumAttributes();
         // Ignore the position attribute. It's decoded separately.
@@ -152,7 +152,7 @@ class MeshEdgeBreakerEncoderImpl implements IMeshEdgeBreakerEncoder
         }
         
         if (numAttributes == 1)
-            return true;
+            return;
         int dataIndex = 0;
         for (int i = 0; i < numAttributes; ++i)
         {
@@ -171,7 +171,6 @@ class MeshEdgeBreakerEncoderImpl implements IMeshEdgeBreakerEncoder
             ++dataIndex;
         }
         
-        return true;
     }
     
     private void assign(IntList list, int size, int val)
@@ -268,7 +267,7 @@ class MeshEdgeBreakerEncoderImpl implements IMeshEdgeBreakerEncoder
      *  Encodes the connectivity between vertices.
      *
      */
-    public boolean encodeConnectivityFromCorner(int cornerId)
+    public void encodeConnectivityFromCorner(int cornerId)
     {
         
         cornerTraversalStack.clear();
@@ -395,7 +394,6 @@ class MeshEdgeBreakerEncoderImpl implements IMeshEdgeBreakerEncoder
             
         }
         
-        return true;
         // All corners have been processed.
     }
     
@@ -585,7 +583,7 @@ class MeshEdgeBreakerEncoderImpl implements IMeshEdgeBreakerEncoder
      *  Encodes connectivity of all attributes on a newly traversed face.
      *
      */
-    public boolean encodeAttributeConnectivitiesOnFace(int corner)
+    public void encodeAttributeConnectivitiesOnFace(int corner)
     {
         int[] corners = {corner, cornerTable.next(corner), cornerTable.previous(corner)};
         int src_face_id = cornerTable.face(corner);
@@ -616,7 +614,6 @@ class MeshEdgeBreakerEncoderImpl implements IMeshEdgeBreakerEncoder
             
         }
         
-        return true;
     }
     
     /**
@@ -638,13 +635,12 @@ class MeshEdgeBreakerEncoderImpl implements IMeshEdgeBreakerEncoder
         this.traversalEncoder = encoder;
     }
     
-    public boolean init(MeshEdgeBreakerEncoder encoder)
+    public void init(MeshEdgeBreakerEncoder encoder)
     {
         
         this.encoder = encoder;
         this.mesh = encoder.getMesh();
         attributeEncoderToDataIdMap.clear();
-        return true;
     }
     
     public MeshAttributeCornerTable getAttributeCornerTable(int attId)
@@ -675,7 +671,8 @@ class MeshEdgeBreakerEncoderImpl implements IMeshEdgeBreakerEncoder
         return posEncodingData;
     }
     
-    public boolean generateAttributesEncoder(int attId)
+    public void generateAttributesEncoder(int attId)
+        throws DrakoException
     {
         int elementType = this.getEncoder().getMesh().getAttributeElementType(attId);
         PointAttribute att = this.getEncoder().getPointCloud().attribute(attId);
@@ -755,7 +752,7 @@ class MeshEdgeBreakerEncoderImpl implements IMeshEdgeBreakerEncoder
         
         
         if (sequencer == null)
-            return false;
+            throw DracoUtils.failed();
         
         if (attDataId == -1)
         {
@@ -773,10 +770,9 @@ class MeshEdgeBreakerEncoderImpl implements IMeshEdgeBreakerEncoder
         // decoder and the correct connectivity.
         attributeEncoderToDataIdMap.add(attDataId);
         this.getEncoder().addAttributesEncoder(attController);
-        return true;
     }
     
-    public boolean encodeAttributesEncoderIdentifier(int attEncoderId)
+    public void encodeAttributesEncoderIdentifier(int attEncoderId)
     {
         int attDataId = attributeEncoderToDataIdMap.get(attEncoderId);
         byte traversalMethod;
@@ -806,7 +802,6 @@ class MeshEdgeBreakerEncoderImpl implements IMeshEdgeBreakerEncoder
         }
         
         encoder.getBuffer().encode(traversalMethod);
-        return true;
     }
     
     private CornerTable createCornerTableFromPositionAttribute(DracoMesh mesh)
@@ -854,7 +849,8 @@ class MeshEdgeBreakerEncoderImpl implements IMeshEdgeBreakerEncoder
     }
     
     @Override
-    public boolean encodeConnectivity()
+    public void encodeConnectivity()
+        throws DrakoException
     {
         final int[] ref1 = new int[1];
         
@@ -873,7 +869,7 @@ class MeshEdgeBreakerEncoderImpl implements IMeshEdgeBreakerEncoder
         }
         
         if (cornerTable == null || (cornerTable.getNumFaces() == cornerTable.getNumDegeneratedFaces()))
-            return DracoUtils.failed();
+            throw DracoUtils.failed();
         
         traversalEncoder.init(this);
         int numVerticesToBeEncoded = cornerTable.getNumVertices() - cornerTable.getNumIsolatedVertices();
@@ -900,10 +896,9 @@ class MeshEdgeBreakerEncoderImpl implements IMeshEdgeBreakerEncoder
         posEncodingData.numValues = 0;
         
         if (!this.findHoles())
-            return false;
+            throw DracoUtils.failed();
         
-        if (!this.initAttributeData())
-            return false;
+        this.initAttributeData();
         byte numAttributeData = (byte)attributeData.length;
         encoder.getBuffer().encode(numAttributeData);
         int numCorners = cornerTable.getNumCorners();
@@ -951,8 +946,7 @@ class MeshEdgeBreakerEncoderImpl implements IMeshEdgeBreakerEncoder
                 int oppFaceId = cornerTable.face(oppId);
                 if (oppFaceId != -1 && !visitedFaces.get(oppFaceId))
                 {
-                    if (!this.encodeConnectivityFromCorner(oppId))
-                        return false;
+                    this.encodeConnectivityFromCorner(oppId);
                 }
                 
             }
@@ -963,8 +957,7 @@ class MeshEdgeBreakerEncoderImpl implements IMeshEdgeBreakerEncoder
                 this.encodeHole(cornerTable.next(startCorner), true);
                 // Start processing the face opposite to the boundary edge (the face
                 // containing the startCorner).
-                if (!this.encodeConnectivityFromCorner(startCorner))
-                    return false;
+                this.encodeConnectivityFromCorner(startCorner);
             }
             
         }
@@ -1002,15 +995,12 @@ class MeshEdgeBreakerEncoderImpl implements IMeshEdgeBreakerEncoder
         
         // Append the traversal buffer.
         
-        if (!this.encodeSplitData())
-            return DracoUtils.failed();
-        
+        this.encodeSplitData();
         
         encoder.getBuffer().encode(traversalEncoder.getBuffer().getData(), traversalEncoder.getBuffer().getBytes());
-        return true;
     }
     
-    boolean encodeSplitData()
+    void encodeSplitData()
     {
         int numEvents = topologySplitEventData.size();
         Encoding.encodeVarint2(numEvents, encoder.getBuffer());
@@ -1044,8 +1034,6 @@ class MeshEdgeBreakerEncoderImpl implements IMeshEdgeBreakerEncoder
             encoder.getBuffer().endBitEncoding();
         }
         
-        
-        return true;
     }
     
     @Override

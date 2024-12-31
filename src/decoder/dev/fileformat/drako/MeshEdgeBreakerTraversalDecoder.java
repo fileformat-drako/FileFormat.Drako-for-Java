@@ -44,17 +44,14 @@ class MeshEdgeBreakerTraversalDecoder implements ITraversalDecoder
         this.numAttributeData = numData;
     }
     
-    public boolean start(DecoderBuffer[] outBuffer)
+    @Override
+    public DecoderBuffer start()
+        throws DrakoException
     {
-        outBuffer[0] = null;
-        if (!this.decodeTraversalSymbols())
-            return false;
-        if (!this.decodeStartFaces())
-            return false;
-        if (!this.decodeAttributeSeams())
-            return false;
-        outBuffer[0] = buffer;
-        return true;
+        this.decodeTraversalSymbols();
+        this.decodeStartFaces();
+        this.decodeAttributeSeams();
+        return buffer;
     }
     
     @Override
@@ -121,57 +118,38 @@ class MeshEdgeBreakerTraversalDecoder implements ITraversalDecoder
         
     }
     
-    protected boolean decodeTraversalSymbols()
+    protected void decodeTraversalSymbols()
+        throws DrakoException
     {
         long traversalSize;
-        final long[] ref3 = new long[1];
         this.symbol_buffer_ = buffer.clone();
-        if (!symbol_buffer_.startBitDecoding(true, ref3))
-        {
-            traversalSize = ref3[0];
-            return DracoUtils.failed();
-        }
-        else
-        {
-            traversalSize = ref3[0];
-        }
-        
+        traversalSize = symbol_buffer_.startBitDecoding(true);
         this.buffer = symbol_buffer_.clone();
         if (traversalSize > buffer.getRemainingSize())
-            return DracoUtils.failed();
+            throw DracoUtils.failed();
         buffer.advance((int)traversalSize);
-        return true;
     }
     
-    protected boolean decodeStartFaces()
+    protected void decodeStartFaces()
+        throws DrakoException
     {
-        final long[] ref4 = new long[1];
         // Create a decoder that is set to the end of the encoded traversal data.
         if (this.getBitstreamVersion() < 22)
         {
             this.startFaceBuffer = buffer.clone();
-            long traversalSize;
-            if (!startFaceBuffer.startBitDecoding(true, ref4))
-            {
-                traversalSize = ref4[0];
-                return DracoUtils.failed();
-            }
-            else
-            {
-                traversalSize = ref4[0];
-            }
-            
+            long traversalSize = startFaceBuffer.startBitDecoding(true);
             this.buffer = startFaceBuffer.clone();
             if (traversalSize > buffer.getRemainingSize())
-                return DracoUtils.failed();
+                throw DracoUtils.failed();
             buffer.advance((int)traversalSize);
-            return true;
+            return;
         }
         
-        return startFaceDecoder.startDecoding(buffer);
+        startFaceDecoder.startDecoding(buffer);
     }
     
-    protected boolean decodeAttributeSeams()
+    protected void decodeAttributeSeams()
+        throws DrakoException
     {
         // Prepare attribute decoding.
         if (numAttributeData > 0)
@@ -180,14 +158,11 @@ class MeshEdgeBreakerTraversalDecoder implements ITraversalDecoder
             for (int i = 0; i < numAttributeData; ++i)
             {
                 attributeConnectivityDecoders[i] = new RAnsBitDecoder();
-                if (!attributeConnectivityDecoders[i].startDecoding(buffer))
-                    return DracoUtils.failed();
+                attributeConnectivityDecoders[i].startDecoding(buffer);
             }
             
         }
         
-        
-        return true;
     }
     
     public MeshEdgeBreakerTraversalDecoder()

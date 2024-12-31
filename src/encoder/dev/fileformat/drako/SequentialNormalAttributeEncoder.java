@@ -24,32 +24,30 @@ class SequentialNormalAttributeEncoder extends SequentialIntegerAttributeEncoder
     }
     
     @Override
-    public boolean initialize(PointCloudEncoder encoder, int attributeId)
+    public void initialize(PointCloudEncoder encoder, int attributeId)
+        throws DrakoException
     {
-        
-        if (!super.initialize(encoder, attributeId))
-            return false;
+        super.initialize(encoder, attributeId);
         // Currently this encoder works only for 3-component normal vectors.
         if (this.getAttribute().getComponentsCount() != 3)
-            return false;
+            throw DracoUtils.failed();
         int q = encoder.getOptions().getQuantizationBits(this.attribute);
         if (q < 1)
-            return false;
+            throw DracoUtils.failed();
         this.attribute_octahedron_transform_ = new AttributeOctahedronTransform(q);
-        return true;
     }
     
     @Override
-    public boolean encodeDataNeededByPortableTransform(EncoderBuffer out_buffer)
+    public void encodeDataNeededByPortableTransform(EncoderBuffer out_buffer)
+        throws DrakoException
     {
-        return attribute_octahedron_transform_.encodeParameters(out_buffer);
+        attribute_octahedron_transform_.encodeParameters(out_buffer);
     }
     
     @Override
-    protected boolean prepareValues(int[] pointIds, int numPoints)
+    protected void prepareValues(int[] pointIds, int numPoints)
     {
         this.portableAttribute = attribute_octahedron_transform_.generatePortableAttribute(this.getAttribute(), pointIds, numPoints);
-        return true;
     }
     
     // Converts a unit vector into octahedral coordinates (0-1 range).

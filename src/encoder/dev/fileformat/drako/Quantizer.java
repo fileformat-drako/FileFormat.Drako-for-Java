@@ -45,7 +45,7 @@ final class Quantizer implements Struct<Quantizer>, Serializable
         this.inverse_delta_ = src.inverse_delta_;
     }
     
-    static final long serialVersionUID = 767168765L;
+    static final long serialVersionUID = 1166676417L;
     @Override
     public int hashCode()
     {

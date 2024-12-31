@@ -9,11 +9,12 @@ class DepthFirstTraverser extends TraverserBase<CornerTable>
     }
     
     @Override
-    public boolean traverseFromCorner(int corner_id)
+    public void traverseFromCorner(int corner_id)
+        throws DrakoException
     {
         
         if (this.isCornerVisited(corner_id))
-            return true;
+            return;
         // Already traversed.
         
         corner_traversal_stack_.clear();
@@ -21,7 +22,7 @@ class DepthFirstTraverser extends TraverserBase<CornerTable>
         int next_vert = this.corner_table_.vertex(this.corner_table_.next(corner_id));
         int prev_vert = this.corner_table_.vertex(this.corner_table_.previous(corner_id));
         if (next_vert == -1 || (prev_vert == -1))
-            return false;
+            throw DracoUtils.failed();
         if (!this.isVertexVisited(next_vert))
         {
             this.markVertexVisited(next_vert);
@@ -55,7 +56,7 @@ class DepthFirstTraverser extends TraverserBase<CornerTable>
                 this.traversal_observer_.onNewFaceVisited(face_id);
                 int vert_id = this.corner_table_.vertex(corner_id);
                 if (vert_id == -1)
-                    return false;
+                    throw DracoUtils.failed();
                 if (!this.isVertexVisited(vert_id))
                 {
                     boolean on_boundary = this.corner_table_.isOnBoundary(vert_id);
@@ -118,7 +119,6 @@ class DepthFirstTraverser extends TraverserBase<CornerTable>
             
         }
         
-        return true;
     }
     
     @Override

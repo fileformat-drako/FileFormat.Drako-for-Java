@@ -39,45 +39,26 @@ class PredictionSchemeNormalOctahedronTransform extends PredictionSchemeNormalOc
     }
     
     @Override
-    public boolean decodeTransformData(DecoderBuffer buffer)
+    public void decodeTransformData(DecoderBuffer buffer)
+        throws DrakoException
     {
         int maxQuantizedValue;
         int centerValue;
-        final int[] ref0 = new int[1];
-        final int[] ref1 = new int[1];
-        if (!buffer.decode6(ref0))
-        {
-            maxQuantizedValue = ref0[0];
-            return false;
-        }
-        else
-        {
-            maxQuantizedValue = ref0[0];
-        }
-        
+        maxQuantizedValue = buffer.decodeI32();
         if (buffer.getBitstreamVersion() < 22)
         {
-            if (!buffer.decode6(ref1))
-            {
-                centerValue = ref1[0];
-                return false;
-            }
-            else
-            {
-                centerValue = ref1[0];
-            }
+            centerValue = buffer.decodeI32();
             
         }
         
         
-        return this.setMaxQuantizedValue(maxQuantizedValue);
+        this.setMaxQuantizedValue(maxQuantizedValue);
     }
     
     @Override
-    public boolean encodeTransformData(EncoderBuffer buffer)
+    public void encodeTransformData(EncoderBuffer buffer)
     {
         buffer.encode2(this.octahedronToolBox.getMaxQuantizedValue());
-        return true;
     }
     
     @Override
@@ -107,25 +88,25 @@ class PredictionSchemeNormalOctahedronTransform extends PredictionSchemeNormalOc
         orig = orig == null ? new IntVector() : orig.clone();
         pred = pred == null ? new IntVector() : pred.clone();
         IntVector t = new IntVector(this.getCenterValue(), this.getCenterValue());
+        final int[] ref0 = new int[1];
+        final int[] ref1 = new int[1];
         final int[] ref2 = new int[1];
         final int[] ref3 = new int[1];
-        final int[] ref4 = new int[1];
-        final int[] ref5 = new int[1];
         orig.copyFrom(IntVector.sub(orig, t));
         pred.copyFrom(IntVector.sub(pred, t));
         
         if (!this.isInDiamond(pred.x, pred.y))
         {
-            ref2[0] = orig.x;
-            ref3[0] = orig.y;
+            ref0[0] = orig.x;
+            ref1[0] = orig.y;
+            this.octahedronToolBox.invertDiamond(ref0, ref1);
+            orig.x = ref0[0];
+            orig.y = ref1[0];
+            ref2[0] = pred.x;
+            ref3[0] = pred.y;
             this.octahedronToolBox.invertDiamond(ref2, ref3);
-            orig.x = ref2[0];
-            orig.y = ref3[0];
-            ref4[0] = pred.x;
-            ref5[0] = pred.y;
-            this.octahedronToolBox.invertDiamond(ref4, ref5);
-            pred.x = ref4[0];
-            pred.y = ref5[0];
+            pred.x = ref2[0];
+            pred.y = ref3[0];
         }
         
         IntVector corr = IntVector.sub(orig, pred);

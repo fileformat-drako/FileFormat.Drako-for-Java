@@ -138,6 +138,7 @@ public class DracoMesh extends DracoPointCloud
     }
     
     static DracoPointCloud decode(DecoderBuffer buffer, boolean decodeData)
+        throws DrakoException
     {
         DracoHeader header = DracoHeader.parse(buffer);
         if (header == null)
@@ -149,6 +150,7 @@ public class DracoMesh extends DracoPointCloud
     }
     
     static DracoPointCloud decode(DecoderBuffer buffer)
+        throws DrakoException
     {
         return DracoMesh.decode(buffer, true);
     }
@@ -159,10 +161,17 @@ public class DracoMesh extends DracoPointCloud
         PointCloudDecoder decoder = DracoMesh.createPointCloudDecoder(header.method);
         if (decoder == null)
             return null;
-        DracoPointCloud ret = new DracoPointCloud();
-        if (!decoder.decode(header, buffer, ret, decodeData))
+        try
+        {
+            DracoPointCloud ret = new DracoPointCloud();
+            decoder.decode(header, buffer, ret, decodeData);
+            return ret;
+        }
+        catch(Exception $e)
+        {
             return null;
-        return ret;
+        }
+        
     }
     
     private static DracoMesh decodeMesh(DecoderBuffer buffer, DracoHeader header, boolean decodeData)
@@ -171,10 +180,17 @@ public class DracoMesh extends DracoPointCloud
         MeshDecoder decoder = DracoMesh.createMeshDecoder(header.method);
         if (decoder == null)
             return null;
-        DracoMesh ret = new DracoMesh();
-        if (!decoder.decode(header, buffer, ret, decodeData))
+        try
+        {
+            DracoMesh ret = new DracoMesh();
+            decoder.decode(header, buffer, ret, decodeData);
+            return ret;
+        }
+        catch(Exception $e)
+        {
             return null;
-        return ret;
+        }
+        
     }
     
     public int getAttributeElementType(int attId)

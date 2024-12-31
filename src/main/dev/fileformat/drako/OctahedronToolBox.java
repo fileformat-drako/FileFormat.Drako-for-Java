@@ -6,15 +6,14 @@ class OctahedronToolBox
     private int max_quantized_value_;
     private int max_value_;
     private int center_value_;
-    public boolean setQuantizationBits(int q)
+    public void setQuantizationBits(int q)
     {
         if (q < 2 || (q > 30))
-            return DracoUtils.failed();
+            throw new IllegalArgumentException("Invalid quantization parameters");
         this.quantization_bits_ = q;
         this.max_quantized_value_ = (1 << quantization_bits_) - 1;
         this.max_value_ = max_quantized_value_ - 1;
         this.center_value_ = max_value_ / 2;
-        return true;
     }
     
     public boolean isInitialized()

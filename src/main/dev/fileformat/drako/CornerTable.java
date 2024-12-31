@@ -68,7 +68,7 @@ class CornerTable extends ICornerTable
             this.edgeCorner = src.edgeCorner;
         }
         
-        static final long serialVersionUID = -586972941L;
+        static final long serialVersionUID = -478043180L;
         @Override
         public int hashCode()
         {
@@ -110,7 +110,7 @@ class CornerTable extends ICornerTable
         this.valenceCache = new ValenceCache(this);
     }
     
-    public boolean initialize(Int2D faces)
+    public void initialize(Int2D faces)
     {
         final int[] ref0 = new int[1];
         
@@ -129,19 +129,9 @@ class CornerTable extends ICornerTable
         }
         
         int numVertices = -1;
-        if (!this.computeOppositeCorners(ref0))
-        {
-            numVertices = ref0[0];
-            return DracoUtils.failed();
-        }
-        else
-        {
-            numVertices = ref0[0];
-        }
-        
-        if (!this.computeVertexCorners(numVertices))
-            return DracoUtils.failed();
-        return true;
+        this.computeOppositeCorners(ref0);
+        numVertices = ref0[0];
+        this.computeVertexCorners(numVertices);
     }
     
     public int[] allCorners(int face)
@@ -261,7 +251,7 @@ class CornerTable extends ICornerTable
         return this.next(this.opposite(this.next(corner)));
     }
     
-    private boolean computeOppositeCorners(int[] numVertices)
+    private void computeOppositeCorners(int[] numVertices)
     {
         this.oppositeCorners = new int[this.getNumCorners()];
         for (int i = 0; i < oppositeCorners.length; i++)
@@ -382,10 +372,9 @@ class CornerTable extends ICornerTable
         }
         
         numVertices[0] = numCornersOnVertices.getCount();
-        return true;
     }
     
-    boolean computeVertexCorners(int numVertices)
+    void computeVertexCorners(int numVertices)
     {
         this.numOriginalVertices = numVertices;
         vertexCorners.resize(numVertices, K_INVALID_CORNER_INDEX);
@@ -480,7 +469,6 @@ class CornerTable extends ICornerTable
             
         }
         
-        return true;
     }
     
     public boolean isDegenerated(int face)
@@ -648,12 +636,12 @@ class CornerTable extends ICornerTable
     
     // Resets the corner table to the given number of invalid faces.
     // 
-    public boolean reset(int numFaces, int numVertices)
+    public void reset(int numFaces, int numVertices)
     {
         if (numFaces < 0 || (numVertices < 0))
-            return false;
+            throw new IllegalArgumentException();
         if (numFaces > (Integer.MAX_VALUE / 3))
-            return false;
+            throw new IllegalArgumentException();
         this.cornerToVertexMap = new int[numFaces * 3];
         this.oppositeCorners = new int[numFaces * 3];
         for (int i = 0; i < cornerToVertexMap.length; i++)
@@ -665,7 +653,6 @@ class CornerTable extends ICornerTable
         vertexCorners.setCapacity(numVertices);
         valenceCache.clearValenceCache();
         valenceCache.clearValenceCacheInaccurate();
-        return true;
     }
     
     public int confidentVertex(int corner)

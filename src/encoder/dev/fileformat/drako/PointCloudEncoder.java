@@ -36,10 +36,11 @@ abstract class PointCloudEncoder
     /**
      *  The main entry point that encodes provided point cloud.
      *
+     * @throws DrakoException Raised when failed to encode the point cloud.
      */
-    public boolean encode(DracoEncodeOptions options, EncoderBuffer outBuffer)
+    public void encode(DracoEncodeOptions options, EncoderBuffer outBuffer)
+        throws DrakoException
     {
-        
         this.options = options;
         this.buffer = outBuffer;
         
@@ -49,16 +50,11 @@ abstract class PointCloudEncoder
         this.attributesEncoderIdsOrder = null;
         
         if (pointCloud == null)
-            return false;
-        if (!this.initializeEncoder())
-            return false;
-        if (!this.encodeEncoderData())
-            return false;
-        if (!this.encodeGeometryData())
-            return false;
-        if (!this.encodePointAttributes())
-            return false;
-        return true;
+            throw DracoUtils.failed();
+        this.initializeEncoder();
+        this.encodeEncoderData();
+        this.encodeGeometryData();
+        this.encodePointAttributes();
     }
     
     public int getGeometryType()
@@ -135,27 +131,25 @@ abstract class PointCloudEncoder
      *  of the encoder. Called in the Encode() method.
      *
      */
-    protected boolean initializeEncoder()
+    protected void initializeEncoder()
     {
-        return true;
     }
     
     /**
      *  Should be used to encode any encoder-specific data.
      *
      */
-    protected boolean encodeEncoderData()
+    protected void encodeEncoderData()
     {
-        return true;
     }
     
     /**
      *  Encodes any global geometry data (such as the number of points).
      *
      */
-    protected boolean encodeGeometryData()
+    protected void encodeGeometryData()
+        throws DrakoException
     {
-        return true;
     }
     
     /**
@@ -165,11 +159,11 @@ abstract class PointCloudEncoder
      *  Returns false if the encoding failed.
      *
      */
-    protected boolean encodePointAttributes()
+    protected void encodePointAttributes()
+        throws DrakoException
     {
         
-        if (!this.generateAttributesEncoders())
-            return false;
+        this.generateAttributesEncoders();
         
         // Encode the number of attribute encoders.
         buffer.encode((byte)(attributesEncoders.size()));
@@ -178,22 +172,19 @@ abstract class PointCloudEncoder
         // dependencies, no data is encoded in this step).
         for (AttributesEncoder attEnc : attributesEncoders)
         {
-            if (!attEnc.initialize(this, pointCloud))
-                return false;
+            attEnc.initialize(this, pointCloud);
         }
         
         
         // Rearrange attributes to respect dependencies between individual attributes.
-        if (!this.rearrangeAttributesEncoders())
-            return false;
+        this.rearrangeAttributesEncoders();
         
         // Encode any data that is necessary to create the corresponding attribute
         // decoder.
         for (int i = 0; i < attributesEncoderIdsOrder.length; i++)
         {
             int attEncoderId = attributesEncoderIdsOrder[i];
-            if (!this.encodeAttributesEncoderIdentifier(attEncoderId))
-                return false;
+            this.encodeAttributesEncoderIdentifier(attEncoderId);
         }
         
         
@@ -202,15 +193,12 @@ abstract class PointCloudEncoder
         for (int i = 0; i < attributesEncoderIdsOrder.length; i++)
         {
             int attEncoderId = attributesEncoderIdsOrder[i];
-            if (!attributesEncoders.get(attEncoderId).encodeAttributesEncoderData(buffer))
-                return false;
+            attributesEncoders.get(attEncoderId).encodeAttributesEncoderData(buffer);
         }
         
         
         // Lastly encode all the attributes using the provided attribute encoders.
-        if (!this.encodeAllAttributes())
-            return false;
-        return true;
+        this.encodeAllAttributes();
     }
     
     /**
@@ -218,14 +206,15 @@ abstract class PointCloudEncoder
      *  point attribute data. Calls GenerateAttributesEncoder() for every attribute
      *  of the encoded PointCloud.
      *
+     * @throws DrakoException throws when failed to generate encoders
      */
-    protected boolean generateAttributesEncoders()
+    protected void generateAttributesEncoders()
+        throws DrakoException
     {
         
         for (int i = 0; i < pointCloud.getNumAttributes(); ++i)
         {
-            if (!this.generateAttributesEncoder(i))
-                return false;
+            this.generateAttributesEncoder(i);
         }
         
         this.attributeToEncoderMap = new int[pointCloud.getNumAttributes()];
@@ -238,7 +227,6 @@ abstract class PointCloudEncoder
             
         }
         
-        return true;
     }
     
     /**
@@ -249,7 +237,8 @@ abstract class PointCloudEncoder
      *  attribute encoder (using AttributesEncoder::AddAttributeId() method).
      *
      */
-    protected abstract boolean generateAttributesEncoder(int attId);
+    protected abstract void generateAttributesEncoder(int attId)
+        throws DrakoException;
     
     /**
      *  Encodes any data that is necessary to recreate a given attribute encoder.
@@ -257,26 +246,24 @@ abstract class PointCloudEncoder
      *  be encoded.
      *
      */
-    protected boolean encodeAttributesEncoderIdentifier(int attEncoderId)
+    protected void encodeAttributesEncoderIdentifier(int attEncoderId)
     {
-        return true;
     }
     
     /**
      *  Encodes all the attribute data using the created attribute encoders.
      *
      */
-    protected boolean encodeAllAttributes()
+    protected void encodeAllAttributes()
+        throws DrakoException
     {
         
         for (int i = 0; i < attributesEncoderIdsOrder.length; i++)
         {
             int attEncoderId = attributesEncoderIdsOrder[i];
-            if (!attributesEncoders.get(attEncoderId).encodeAttributes(buffer))
-                return false;
+            attributesEncoders.get(attEncoderId).encodeAttributes(buffer);
         }
         
-        return true;
     }
     
     /**
@@ -285,7 +272,8 @@ abstract class PointCloudEncoder
      *  encoded in the correct order (parent attributes before their children).
      *
      */
-    private boolean rearrangeAttributesEncoders()
+    private void rearrangeAttributesEncoders()
+        throws DrakoException
     {
         
         // Find the encoding order of the attribute encoders that is determined by
@@ -339,7 +327,7 @@ abstract class PointCloudEncoder
             }
             
             if (!encoderProcessed && (numProcessedEncoders < attributesEncoders.size()))
-                return false;
+                throw DracoUtils.failed();
         }
         
         int[] attributeEncodingOrder = null;
@@ -385,14 +373,13 @@ abstract class PointCloudEncoder
                 }
                 
                 if (!attributeProcessed && (numProcessedAttributes < numEncoderAttributes))
-                    return false;
+                    throw DracoUtils.failed();
             }
             
             // Update the order of the attributes within the encoder.
             attributesEncoders.get(ae).setAttributeIds(attributeEncodingOrder);
         }
         
-        return true;
     }
     
     public PointAttribute getPortableAttribute(int parent_att_id)

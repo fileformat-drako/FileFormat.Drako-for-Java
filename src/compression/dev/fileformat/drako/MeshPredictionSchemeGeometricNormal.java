@@ -26,32 +26,32 @@ class MeshPredictionSchemeGeometricNormal extends MeshPredictionScheme
     }
     
     @Override
-    public boolean setParentAttribute(PointAttribute att)
+    public void setParentAttribute(PointAttribute att)
+        throws DrakoException
     {
         if (att.getAttributeType() != AttributeType.POSITION)
-            return DracoUtils.failed();
+            throw DracoUtils.failed();
         // Invalid attribute type.
         if (att.getComponentsCount() != 3)
-            return DracoUtils.failed();
+            throw DracoUtils.failed();
         // Currently works only for 3 component positions.
         predictor_.pos_attribute_ = att;
-        return true;
     }
     
     public boolean getInitialized()
     {
         
         if (!predictor_.isInitialized())
-            return DracoUtils.failed();
+            return false;
         //if (!meshData.Initialized)
         //    return DracoUtils.Failed();
         if (!octahedron_tool_box_.isInitialized())
-            return DracoUtils.failed();
+            return false;
         return true;
     }
     
     @Override
-    public boolean computeOriginalValues(IntSpan inCorr, IntSpan outData, int size, int numComponents, int[] entryToPointIdMap)
+    public void computeOriginalValues(IntSpan inCorr, IntSpan outData, int size, int numComponents, int[] entryToPointIdMap)
     {
         final int[] ref0 = new int[1];
         final int[] ref1 = new int[1];
@@ -88,32 +88,25 @@ class MeshPredictionSchemeGeometricNormal extends MeshPredictionScheme
         
         
         flip_normal_bit_decoder_.endDecoding();
-        return true;
     }
     
     @Override
-    public boolean decodePredictionData(DecoderBuffer buffer)
+    public void decodePredictionData(DecoderBuffer buffer)
+        throws DrakoException
     {
-        final byte[] ref2 = new byte[1];
-        if (!this.transform_.decodeTransformData(buffer))
-            return DracoUtils.failed();
+        this.transform_.decodeTransformData(buffer);
         
         if (buffer.getBitstreamVersion() < 22)
         {
-            byte prediction_mode;
-            buffer.decode3(ref2);
-            prediction_mode = ref2[0];
+            byte prediction_mode = buffer.decodeU8();
             
             if (!predictor_.setNormalPredictionMode(prediction_mode))
-                return DracoUtils.failed();
+                throw DracoUtils.failed();
         }
         
         
         // Init normal flips.
-        if (!flip_normal_bit_decoder_.startDecoding(buffer))
-            return DracoUtils.failed();
-        
-        return true;
+        flip_normal_bit_decoder_.startDecoding(buffer);
     }
     
     public int getPredictionMethod()
@@ -123,12 +116,12 @@ class MeshPredictionSchemeGeometricNormal extends MeshPredictionScheme
     
     private RAnsBitEncoder flip_normal_bit_encoder_;
     @Override
-    public boolean computeCorrectionValues(IntSpan in_data, IntSpan out_corr, int size, int num_components, int[] entry_to_point_id_map)
+    public void computeCorrectionValues(IntSpan in_data, IntSpan out_corr, int size, int num_components, int[] entry_to_point_id_map)
     {
+        final int[] ref2 = new int[1];
         final int[] ref3 = new int[1];
         final int[] ref4 = new int[1];
         final int[] ref5 = new int[1];
-        final int[] ref6 = new int[1];
         
         octahedron_tool_box_.setQuantizationBits(((PredictionSchemeNormalOctahedronTransformBase)this.transform_).getQuantizationBits());
         predictor_.entry_to_point_id_map_ = entry_to_point_id_map;
@@ -149,17 +142,17 @@ class MeshPredictionSchemeGeometricNormal extends MeshPredictionScheme
             octahedron_tool_box_.canonicalizeIntegerVector(pred_normal_3d);
             int s;
             int t;
-            octahedron_tool_box_.integerVectorToQuantizedOctahedralCoords(pred_normal_3d, ref3, ref4);
-            s = ref3[0];
-            t = ref4[0];
+            octahedron_tool_box_.integerVectorToQuantizedOctahedralCoords(pred_normal_3d, ref2, ref3);
+            s = ref2[0];
+            t = ref3[0];
             pos_pred_normal_oct.put(0, s);
             pos_pred_normal_oct.put(1, t);
             pred_normal_3d[0] = -pred_normal_3d[0];
             pred_normal_3d[1] = -pred_normal_3d[1];
             pred_normal_3d[2] = -pred_normal_3d[2];
-            octahedron_tool_box_.integerVectorToQuantizedOctahedralCoords(pred_normal_3d, ref5, ref6);
-            s = ref5[0];
-            t = ref6[0];
+            octahedron_tool_box_.integerVectorToQuantizedOctahedralCoords(pred_normal_3d, ref4, ref5);
+            s = ref4[0];
+            t = ref5[0];
             neg_pred_normal_oct.put(0, s);
             neg_pred_normal_oct.put(1, t);
             int data_offset = data_id * 2;
@@ -185,20 +178,16 @@ class MeshPredictionSchemeGeometricNormal extends MeshPredictionScheme
             
         }
         
-        
-        return true;
     }
     
     @Override
-    public boolean encodePredictionData(EncoderBuffer buffer)
+    public void encodePredictionData(EncoderBuffer buffer)
     {
         
-        if (!this.transform_.encodeTransformData(buffer))
-            return false;
+        this.transform_.encodeTransformData(buffer);
         
         // Encode normal flips.
         flip_normal_bit_encoder_.endEncoding(buffer);
-        return true;
     }
     
     private void $initFields$()

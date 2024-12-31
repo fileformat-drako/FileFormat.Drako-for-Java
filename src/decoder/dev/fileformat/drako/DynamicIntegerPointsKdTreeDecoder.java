@@ -79,38 +79,29 @@ class DynamicIntegerPointsKdTreeDecoder
         this.half_decoder_ = new DirectBitDecoder();
     }
     
-    public boolean decodePoints(DecoderBuffer buffer, PointAttributeVectorOutputIterator oit)
+    public void decodePoints(DecoderBuffer buffer, PointAttributeVectorOutputIterator oit)
+        throws DrakoException
     {
-        final int[] ref0 = new int[1];
-        final int[] ref1 = new int[1];
-        buffer.decode6(ref0);
-        bit_length_ = ref0[0];
+        this.bit_length_ = buffer.decodeI32();
         if (bit_length_ > 32)
-            return false;
-        buffer.decode6(ref1);
-        num_points_ = ref1[0];
+            throw DracoUtils.failed();
+        this.num_points_ = buffer.decodeI32();
+        
         if (num_points_ == 0)
-            return true;
+            return;
         this.num_decoded_points_ = 0;
         
-        if (!numbers_decoder_.startDecoding(buffer))
-            return false;
-        if (!remaining_bits_decoder_.startDecoding(buffer))
-            return false;
-        if (!axis_decoder_.startDecoding(buffer))
-            return false;
-        if (!half_decoder_.startDecoding(buffer))
-            return false;
+        numbers_decoder_.startDecoding(buffer);
+        remaining_bits_decoder_.startDecoding(buffer);
+        axis_decoder_.startDecoding(buffer);
+        half_decoder_.startDecoding(buffer);
         
-        if (!this.decodeInternal(num_points_, oit))
-            return false;
+        this.decodeInternal(num_points_, oit);
         
         numbers_decoder_.endDecoding();
         remaining_bits_decoder_.endDecoding();
         axis_decoder_.endDecoding();
         half_decoder_.endDecoding();
-        
-        return true;
     }
     
     int getAxis(int num_remaining_points, int[] levels, int last_axis)
@@ -140,7 +131,8 @@ class DynamicIntegerPointsKdTreeDecoder
         return best_axis;
     }
     
-    boolean decodeInternal(int num_points, PointAttributeVectorOutputIterator oit)
+    void decodeInternal(int num_points, PointAttributeVectorOutputIterator oit)
+        throws DrakoException
     {
         base_stack_[0] = new int[dimension_];
         levels_stack_[0] = new int[dimension_];
@@ -160,10 +152,10 @@ class DynamicIntegerPointsKdTreeDecoder
             int[] levels = levels_stack_[stack_pos];
             
             if (num_remaining_points > num_points)
-                return false;
+                throw DracoUtils.failed();
             int axis = this.getAxis(num_remaining_points, levels, last_axis);
             if (axis >= dimension_)
-                return false;
+                throw DracoUtils.failed();
             int level = levels[axis];
             
             // All axes have been fully subdivided, just output points.
@@ -217,7 +209,7 @@ class DynamicIntegerPointsKdTreeDecoder
             
             
             if (num_decoded_points_ > num_points_)
-                return false;
+                throw DracoUtils.failed();
             
             num_remaining_bits = bit_length_ - level;
             int modifier = 1 << (num_remaining_bits - 1);
@@ -258,8 +250,6 @@ class DynamicIntegerPointsKdTreeDecoder
             
         }
         
-        
-        return true;
     }
     
     private int decodeNumber(int nbits)

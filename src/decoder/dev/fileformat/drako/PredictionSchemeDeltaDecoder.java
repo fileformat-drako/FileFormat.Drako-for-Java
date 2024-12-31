@@ -18,13 +18,13 @@ class PredictionSchemeDeltaDecoder extends PredictionScheme
     }
     
     @Override
-    public boolean computeCorrectionValues(IntSpan in_data, IntSpan out_corr, int size, int num_components, int[] entry_to_point_id_map)
+    public void computeCorrectionValues(IntSpan in_data, IntSpan out_corr, int size, int num_components, int[] entry_to_point_id_map)
     {
         throw new UnsupportedOperationException();
     }
     
     @Override
-    public boolean computeOriginalValues(IntSpan in_corr, IntSpan out_data, int size, int num_components, int[] entry_to_point_id_map)
+    public void computeOriginalValues(IntSpan in_corr, IntSpan out_data, int size, int num_components, int[] entry_to_point_id_map)
     {
         
         this.transform_.initializeDecoding(num_components);
@@ -37,8 +37,6 @@ class PredictionSchemeDeltaDecoder extends PredictionScheme
             this.transform_.computeOriginalValue(out_data, i - num_components, in_corr, i, out_data, i);
         }
         
-        
-        return true;
     }
     
 }

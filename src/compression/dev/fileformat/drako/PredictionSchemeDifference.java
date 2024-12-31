@@ -25,7 +25,7 @@ class PredictionSchemeDifference extends PredictionScheme
     }
     
     @Override
-    public boolean computeCorrectionValues(IntSpan inData, IntSpan outCorr, int size, int numComponents, int[] entryToPointIdMap)
+    public void computeCorrectionValues(IntSpan inData, IntSpan outCorr, int size, int numComponents, int[] entryToPointIdMap)
     {
         
         this.transform_.initializeEncoding(inData, numComponents);
@@ -37,11 +37,10 @@ class PredictionSchemeDifference extends PredictionScheme
         
         IntSpan zeroVals = IntSpan.wrap(new int[numComponents]);
         this.transform_.computeCorrection(inData, zeroVals, outCorr, 0);
-        return true;
     }
     
     @Override
-    public boolean computeOriginalValues(IntSpan inCorr, IntSpan outData, int size, int numComponents, int[] entryToPointIdMap)
+    public void computeOriginalValues(IntSpan inCorr, IntSpan outData, int size, int numComponents, int[] entryToPointIdMap)
     {
         this.transform_.initializeDecoding(numComponents);
         IntSpan zeroVals = IntSpan.wrap(new int[numComponents]);
@@ -53,7 +52,6 @@ class PredictionSchemeDifference extends PredictionScheme
             this.transform_.computeOriginalValue(outData, i - numComponents, inCorr, i, outData, i);
         }
         
-        return true;
     }
     
 }

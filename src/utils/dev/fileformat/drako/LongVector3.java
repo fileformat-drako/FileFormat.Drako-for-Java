@@ -48,7 +48,7 @@ final class LongVector3 implements Struct<LongVector3>, Serializable
         this.z = src.z;
     }
     
-    static final long serialVersionUID = -1377282380L;
+    static final long serialVersionUID = -940342152L;
     @Override
     public int hashCode()
     {

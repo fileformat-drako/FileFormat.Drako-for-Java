@@ -55,19 +55,18 @@ abstract class MeshEncoder extends PointCloudEncoder
     }
     
     @Override
-    protected boolean encodeGeometryData()
+    protected void encodeGeometryData()
+        throws DrakoException
     {
-        
-        if (!this.encodeConnectivity())
-            return false;
-        return true;
+        this.encodeConnectivity();
     }
     
     /**
      *  Needs to be implemented by the derived classes.
      *
      */
-    protected abstract boolean encodeConnectivity();
+    protected abstract void encodeConnectivity()
+        throws DrakoException;
     
     
 }

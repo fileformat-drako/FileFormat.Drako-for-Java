@@ -7,31 +7,21 @@ class PointCloudKdTreeDecoder extends PointCloudDecoder
     }
     
     @Override
-    protected boolean decodeGeometryData()
+    protected void decodeGeometryData()
+        throws DrakoException
     {
-        int num_points;
-        final int[] ref0 = new int[1];
-        if (!this.getBuffer().decode6(ref0))
-        {
-            num_points = ref0[0];
-            return false;
-        }
-        else
-        {
-            num_points = ref0[0];
-        }
-        
+        int num_points = this.buffer.decodeI32();
         if (num_points < 0)
-            return false;
+            throw DracoUtils.failed();
         this.getPointCloud().setNumPoints(num_points);
-        return true;
     }
     
     @Override
-    protected boolean createAttributesDecoder(int attrDecoderId)
+    protected void createAttributesDecoder(int attrDecoderId)
+        throws DrakoException
     {
         // Always create the basic attribute decoder.
-        return this.setAttributesDecoder(attrDecoderId, new KdTreeAttributesDecoder());
+        this.setAttributesDecoder(attrDecoderId, new KdTreeAttributesDecoder());
     }
     
 }

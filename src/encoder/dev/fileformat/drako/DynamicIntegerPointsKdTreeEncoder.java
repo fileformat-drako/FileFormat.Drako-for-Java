@@ -52,7 +52,7 @@ class DynamicIntegerPointsKdTreeEncoder
             this.stack_pos = src.stack_pos;
         }
         
-        static final long serialVersionUID = -1760009184L;
+        static final long serialVersionUID = -1528942074L;
         @Override
         public int hashCode()
         {
@@ -145,7 +145,7 @@ class DynamicIntegerPointsKdTreeEncoder
         
     }
     
-    public boolean encodePoints(int[][] array, int bit_length, EncoderBuffer buffer)
+    public void encodePoints(int[][] array, int bit_length, EncoderBuffer buffer)
     {
         this.bit_length_ = bit_length;
         this.num_points_ = array.length;
@@ -153,7 +153,7 @@ class DynamicIntegerPointsKdTreeEncoder
         buffer.encode(bit_length_);
         buffer.encode2(num_points_);
         if (num_points_ == 0)
-            return true;
+            return;
         
         numbers_encoder_.startEncoding();
         remaining_bits_encoder_.startEncoding();
@@ -166,8 +166,6 @@ class DynamicIntegerPointsKdTreeEncoder
         remaining_bits_encoder_.endEncoding(buffer);
         axis_encoder_.endEncoding(buffer);
         half_encoder_.endEncoding(buffer);
-        
-        return true;
     }
     
     public void encodeNumber(int nbits, int value)

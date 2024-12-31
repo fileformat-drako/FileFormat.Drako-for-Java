@@ -22,7 +22,7 @@ class EdgeBreakerTraverser<TCornerTable extends ICornerTable> extends TraverserB
     }
     
     @Override
-    public boolean traverseFromCorner(int cornerId)
+    public void traverseFromCorner(int cornerId)
     {
         cornerTraversalStack.clear();
         cornerTraversalStack.add(cornerId);
@@ -120,7 +120,6 @@ class EdgeBreakerTraverser<TCornerTable extends ICornerTable> extends TraverserB
             
         }
         
-        return true;
     }
     
     @Override

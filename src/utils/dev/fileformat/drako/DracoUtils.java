@@ -178,9 +178,9 @@ class DracoUtils
         return r;
     }
     
-    public static boolean failed()
+    public static DrakoException failed()
     {
-        return false;
+        return new DrakoException();
     }
     
     static long intSqrt(long number)

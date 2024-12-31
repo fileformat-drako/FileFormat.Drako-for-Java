@@ -12,12 +12,12 @@ abstract class PointsSequencer
      *  Fills the |outPointIds| with the generated sequence of point ids.
      *
      */
-    public boolean generateSequence(int[][] outPointIds)
+    public int[] generateSequence()
+        throws DrakoException
     {
         this.outPointIds.clear();
-        boolean ret = this.generateSequenceInternal();
-        outPointIds[0] = this.outPointIds.toArray();
-        return ret;
+        this.generateSequenceInternal();
+        return this.outPointIds.toArray();
     }
     
     /**
@@ -37,9 +37,10 @@ abstract class PointsSequencer
      *  Must be implemented for sequencers that are used by attribute decoders.
      *
      */
-    public boolean updatePointToAttributeIndexMapping(PointAttribute attr)
+    public void updatePointToAttributeIndexMapping(PointAttribute attr)
+        throws DrakoException
     {
-        return DracoUtils.failed();
+        throw DracoUtils.failed();
     }
     
     /**
@@ -48,7 +49,8 @@ abstract class PointsSequencer
      *  sequence of point ids.
      *
      */
-    protected abstract boolean generateSequenceInternal();
+    protected abstract void generateSequenceInternal()
+        throws DrakoException;
     
     public PointsSequencer()
     {

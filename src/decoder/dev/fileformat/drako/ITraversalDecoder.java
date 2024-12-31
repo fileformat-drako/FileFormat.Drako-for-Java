@@ -32,7 +32,8 @@ interface ITraversalDecoder
      *  traversal.
      *
      */
-    boolean start(DecoderBuffer[] outBuffer);
+    DecoderBuffer start()
+        throws DrakoException;
     
     void done();
     

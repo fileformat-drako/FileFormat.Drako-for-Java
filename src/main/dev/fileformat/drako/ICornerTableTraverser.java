@@ -5,7 +5,8 @@ interface ICornerTableTraverser<TCornerTable extends ICornerTable>
     
     // CornerTableTraversalProcessor<TCornerTable> TraversalProcessor{ get; }
     // 
-    boolean traverseFromCorner(int cornerId);
+    void traverseFromCorner(int cornerId)
+        throws DrakoException;
     
     void onTraversalStart();
     

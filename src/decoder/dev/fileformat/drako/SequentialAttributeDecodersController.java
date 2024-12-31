@@ -10,94 +10,70 @@ class SequentialAttributeDecodersController extends AttributesDecoder
     }
     
     @Override
-    public boolean decodeAttributesDecoderData(DecoderBuffer buffer)
+    public void decodeAttributesDecoderData(DecoderBuffer buffer)
+        throws DrakoException
     {
-        final byte[] ref0 = new byte[1];
         
-        if (!super.decodeAttributesDecoderData(buffer))
-            return DracoUtils.failed();
+        super.decodeAttributesDecoderData(buffer);
         // Decode unique ids of all sequential encoders and create them.
         this.sequentialDecoders = new SequentialAttributeDecoder[this.getNumAttributes()];
         for (int i = 0; i < this.getNumAttributes(); ++i)
         {
-            byte decoderType;
-            if (!buffer.decode3(ref0))
-            {
-                decoderType = ref0[0];
-                return DracoUtils.failed();
-            }
-            else
-            {
-                decoderType = ref0[0];
-            }
-            
+            byte decoderType = buffer.decodeU8();
             // Create the decoder from the id.
             sequentialDecoders[i] = this.createSequentialDecoder((int)(0xff & decoderType));
             if (sequentialDecoders[i] == null)
-                return DracoUtils.failed();
-            if (!sequentialDecoders[i].initialize(this.getDecoder(), this.getAttributeId(i)))
-                return DracoUtils.failed();
+                throw DracoUtils.failed();
+            sequentialDecoders[i].initialize(this.getDecoder(), this.getAttributeId(i));
         }
         
-        return true;
     }
     
     @Override
-    public boolean decodeAttributes(DecoderBuffer buffer)
+    public void decodeAttributes(DecoderBuffer buffer)
+        throws DrakoException
     {
-        final int[][] ref1 = new int[1][];
         
-        if (sequencer == null || !sequencer.generateSequence(ref1))
-        {
-            pointIds = ref1[0];
-            return DracoUtils.failed();
-        }
-        else
-        {
-            pointIds = ref1[0];
-        }
-        
+        if (sequencer == null)
+            throw DracoUtils.failed();
+        this.pointIds = sequencer.generateSequence();
         // Initialize point to attribute value mapping for all decoded attributes.
         for (int i = 0; i < this.getNumAttributes(); ++i)
         {
             PointAttribute pa = this.getDecoder().getPointCloud().attribute(this.getAttributeId(i));
-            if (!sequencer.updatePointToAttributeIndexMapping(pa))
-                return DracoUtils.failed();
+            sequencer.updatePointToAttributeIndexMapping(pa);
         }
         
-        return super.decodeAttributes(buffer);
+        super.decodeAttributes(buffer);
     }
     
     @Override
-    protected boolean decodePortableAttributes(DecoderBuffer buffer)
+    protected void decodePortableAttributes(DecoderBuffer buffer)
+        throws DrakoException
     {
         int num_attributes = this.getNumAttributes();
         for (int i = 0; i < num_attributes; ++i)
         {
-            if (!sequentialDecoders[i].decodePortableAttribute(pointIds, buffer))
-                return DracoUtils.failed();
+            sequentialDecoders[i].decodePortableAttribute(pointIds, buffer);
         }
         
-        
-        return true;
     }
     
     @Override
-    protected boolean decodeDataNeededByPortableTransforms(DecoderBuffer buffer)
+    protected void decodeDataNeededByPortableTransforms(DecoderBuffer buffer)
+        throws DrakoException
     {
         int num_attributes = this.getNumAttributes();
         for (int i = 0; i < num_attributes; ++i)
         {
-            if (!sequentialDecoders[i].decodeDataNeededByPortableTransform(pointIds, buffer))
-                return DracoUtils.failed();
+            sequentialDecoders[i].decodeDataNeededByPortableTransform(pointIds, buffer);
         }
         
-        
-        return true;
     }
     
     @Override
-    protected boolean transformAttributesToOriginalFormat()
+    protected void transformAttributesToOriginalFormat()
+        throws DrakoException
     {
         int num_attributes = this.getNumAttributes();
         for (int i = 0; i < num_attributes; ++i)
@@ -120,12 +96,9 @@ class SequentialAttributeDecodersController extends AttributesDecoder
             }
             
             
-            if (!sequentialDecoders[i].transformAttributeToOriginalFormat(pointIds))
-                return DracoUtils.failed();
+            sequentialDecoders[i].transformAttributeToOriginalFormat(pointIds);
         }
         
-        
-        return true;
     }
     
     protected SequentialAttributeDecoder createSequentialDecoder(int decoderType)

@@ -181,10 +181,9 @@ class MeshEdgeBreakerDecoderImpl implements IMeshEdgeBreakerDecoderImpl
         this.traversalDecoder = traversalDecoder;
     }
     
-    public boolean init(MeshEdgeBreakerDecoder decoder)
+    public void init(MeshEdgeBreakerDecoder decoder)
     {
         this.decoder = decoder;
-        return true;
     }
     
     public MeshAttributeCornerTable getAttributeCornerTable(int attId)
@@ -226,61 +225,29 @@ class MeshEdgeBreakerDecoderImpl implements IMeshEdgeBreakerDecoderImpl
         return posEncodingData;
     }
     
-    public boolean createAttributesDecoder(int attDecoderId)
+    public void createAttributesDecoder(int attDecoderId)
+        throws DrakoException
     {
-        byte attDataId;
-        final byte[] ref0 = new byte[1];
-        final byte[] ref1 = new byte[1];
-        final byte[] ref2 = new byte[1];
-        if (!decoder.getBuffer().decode2(ref0))
-        {
-            attDataId = ref0[0];
-            return DracoUtils.failed();
-        }
-        else
-        {
-            attDataId = ref0[0];
-        }
-        
-        byte decoderType;
-        if (!decoder.getBuffer().decode3(ref1))
-        {
-            decoderType = ref1[0];
-            return DracoUtils.failed();
-        }
-        else
-        {
-            decoderType = ref1[0];
-        }
-        
+        byte attDataId = decoder.getBuffer().decodeI8();
+        byte decoderType = decoder.getBuffer().decodeU8();
         
         if (attDataId >= 0)
         {
             if (attDataId >= attributeData.length)
-                return DracoUtils.failed();
+                throw DracoUtils.failed();
             attributeData[0xff & attDataId].decoderId = attDecoderId;
         }
         else
         {
             if (posDataDecoderId >= 0)
-                return DracoUtils.failed();
+                throw DracoUtils.failed();
             this.posDataDecoderId = attDecoderId;
         }
         
         byte traversalMethod = MeshTraversalMethod.DEPTH_FIRST;
         if (decoder.getBitstreamVersion() >= 12)
         {
-            byte encoded;
-            if (!decoder.getBuffer().decode3(ref2))
-            {
-                encoded = ref2[0];
-                return DracoUtils.failed();
-            }
-            else
-            {
-                encoded = ref2[0];
-            }
-            
+            byte encoded = decoder.getBuffer().decodeU8();
             traversalMethod = encoded;
         }
         
@@ -314,7 +281,7 @@ class MeshEdgeBreakerDecoderImpl implements IMeshEdgeBreakerDecoderImpl
                 attTraverser = new PredictionDegreeTraverser(attObserver);
             }
             else
-                return DracoUtils.failed();
+                throw DracoUtils.failed();
             
             traversalSequencer.setTraverser(attTraverser);
             sequencer = traversalSequencer;
@@ -322,7 +289,7 @@ class MeshEdgeBreakerDecoderImpl implements IMeshEdgeBreakerDecoderImpl
         else
         {
             if (attDataId < 0)
-                return DracoUtils.failed();
+                throw DracoUtils.failed();
             // Attribute data must be specified.
             MeshTraversalSequencer<MeshAttributeCornerTable> traversalSequencer = new MeshTraversalSequencer<MeshAttributeCornerTable>(mesh, attributeData[0xff & attDataId].encodingData);
             MeshAttributeIndicesEncodingObserver<MeshAttributeCornerTable> attObserver = new MeshAttributeIndicesEncodingObserver<MeshAttributeCornerTable>(attributeData[0xff & attDataId].connectivityData, mesh, traversalSequencer, attributeData[0xff & attDataId].encodingData);
@@ -335,26 +302,12 @@ class MeshEdgeBreakerDecoderImpl implements IMeshEdgeBreakerDecoderImpl
         SequentialAttributeDecodersController attController = new SequentialAttributeDecodersController(sequencer);
         
         decoder.setAttributesDecoder(attDecoderId, attController);
-        return true;
     }
     
     @Override
-    public boolean decodeConnectivity()
+    public void decodeConnectivity()
+        throws DrakoException
     {
-        final int[] ref3 = new int[1];
-        final int[] ref4 = new int[1];
-        final int[] ref5 = new int[1];
-        final int[] ref6 = new int[1];
-        final int[] ref7 = new int[1];
-        final int[] ref8 = new int[1];
-        final byte[] ref9 = new byte[1];
-        final int[] ref10 = new int[1];
-        final int[] ref11 = new int[1];
-        final int[] ref12 = new int[1];
-        final int[] ref13 = new int[1];
-        final int[] ref14 = new int[1];
-        final int[] ref15 = new int[1];
-        final DecoderBuffer[] ref16 = new DecoderBuffer[1];
         this.numNewVertices = 0;
         newToParentVertexMap.clear();
         if (decoder.getBitstreamVersion() < 22)
@@ -362,25 +315,11 @@ class MeshEdgeBreakerDecoderImpl implements IMeshEdgeBreakerDecoderImpl
             int num_new_verts;
             if (decoder.getBitstreamVersion() < 20)
             {
-                if (!decoder.getBuffer().decode5(ref3))
-                {
-                    num_new_verts = ref3[0];
-                    return DracoUtils.failed();
-                }
-                else
-                {
-                    num_new_verts = ref3[0];
-                }
-                
-            }
-            else if (!Decoding.decodeVarint(ref4, decoder.getBuffer()))
-            {
-                num_new_verts = ref4[0];
-                return DracoUtils.failed();
+                num_new_verts = decoder.getBuffer().decodeU32();
             }
             else
             {
-                num_new_verts = ref4[0];
+                num_new_verts = Decoding.decodeVarintU32(decoder.getBuffer());
             }
             
             
@@ -390,25 +329,11 @@ class MeshEdgeBreakerDecoderImpl implements IMeshEdgeBreakerDecoderImpl
         int numEncodedVertices;
         if (decoder.getBitstreamVersion() < 20)
         {
-            if (!decoder.getBuffer().decode5(ref5))
-            {
-                numEncodedVertices = ref5[0];
-                return DracoUtils.failed();
-            }
-            else
-            {
-                numEncodedVertices = ref5[0];
-            }
-            
-        }
-        else if (!Decoding.decodeVarint(ref6, decoder.getBuffer()))
-        {
-            numEncodedVertices = ref6[0];
-            return DracoUtils.failed();
+            numEncodedVertices = decoder.getBuffer().decodeU32();
         }
         else
         {
-            numEncodedVertices = ref6[0];
+            numEncodedVertices = Decoding.decodeVarintU32(decoder.getBuffer());
         }
         
         
@@ -417,110 +342,56 @@ class MeshEdgeBreakerDecoderImpl implements IMeshEdgeBreakerDecoderImpl
         
         if (decoder.getBitstreamVersion() < 20)
         {
-            if (!decoder.getBuffer().decode5(ref7))
-            {
-                numFaces = ref7[0];
-                return DracoUtils.failed();
-            }
-            else
-            {
-                numFaces = ref7[0];
-            }
-            
-        }
-        else if (!Decoding.decodeVarint(ref8, decoder.getBuffer()))
-        {
-            numFaces = ref8[0];
-            return DracoUtils.failed();
+            numFaces = decoder.getBuffer().decodeU32();
         }
         else
         {
-            numFaces = ref8[0];
+            numFaces = Decoding.decodeVarintU32(decoder.getBuffer());
         }
         
         
         if ((0xffffffffl & numFaces) > 805306367)//Upper limit of int32_t / 3
-            return DracoUtils.failed();
+            throw DracoUtils.failed();
         // Draco cannot handle this many faces.
         
         if ((0xffffffffl & numEncodedVertices) > (numFaces * 3))
-            return DracoUtils.failed();
-        byte numAttributeData;
-        if (!decoder.getBuffer().decode3(ref9))
-        {
-            numAttributeData = ref9[0];
-            return DracoUtils.failed();
-        }
-        else
-        {
-            numAttributeData = ref9[0];
-        }
-        
+            throw DracoUtils.failed();
+        byte numAttributeData = decoder.getBuffer().decodeU8();
         int numEncodedSymbols;
         if (decoder.getBitstreamVersion() < 20)
         {
-            if (!decoder.getBuffer().decode5(ref10))
-            {
-                numEncodedSymbols = ref10[0];
-                return DracoUtils.failed();
-            }
-            else
-            {
-                numEncodedSymbols = ref10[0];
-            }
-            
-        }
-        else if (!Decoding.decodeVarint(ref11, decoder.getBuffer()))
-        {
-            numEncodedSymbols = ref11[0];
-            return DracoUtils.failed();
+            numEncodedSymbols = decoder.getBuffer().decodeU32();
         }
         else
         {
-            numEncodedSymbols = ref11[0];
+            numEncodedSymbols = Decoding.decodeVarintU32(decoder.getBuffer());
         }
         
         
         if ((0xffffffffl & numFaces) < (0xffffffffl & numEncodedSymbols))
-            return DracoUtils.failed();
+            throw DracoUtils.failed();
         int max_encoded_faces = numEncodedSymbols + (numEncodedSymbols / 3);
         if ((0xffffffffl & numFaces) > (0xffffffffl & max_encoded_faces))
-            return DracoUtils.failed();
+            throw DracoUtils.failed();
         int numEncodedSplitSymbols;
         if (decoder.getBitstreamVersion() < 20)
         {
-            if (!decoder.getBuffer().decode5(ref12))
-            {
-                numEncodedSplitSymbols = ref12[0];
-                return DracoUtils.failed();
-            }
-            else
-            {
-                numEncodedSplitSymbols = ref12[0];
-            }
-            
-        }
-        else if (!Decoding.decodeVarint(ref13, decoder.getBuffer()))
-        {
-            numEncodedSplitSymbols = ref13[0];
-            return DracoUtils.failed();
+            numEncodedSplitSymbols = decoder.getBuffer().decodeU32();
         }
         else
         {
-            numEncodedSplitSymbols = ref13[0];
+            numEncodedSplitSymbols = Decoding.decodeVarintU32(decoder.getBuffer());
         }
         
         
         if ((0xffffffffl & numEncodedSplitSymbols) > (0xffffffffl & numEncodedSymbols))
-            return DracoUtils.failed();
+            throw DracoUtils.failed();
         
         
         
         // Decode topology (connectivity).
         vertexTraversalLength.clear();
         this.cornerTable = new CornerTable();
-        if (cornerTable == null)
-            return DracoUtils.failed();
         processedCornerIds.clear();
         processedCornerIds.setCapacity(numFaces);
         processedConnectivityCorners.clear();
@@ -539,8 +410,7 @@ class MeshEdgeBreakerDecoderImpl implements IMeshEdgeBreakerDecoderImpl
         this.attributeData = new AttributeData[0xff & numAttributeData];
         
         
-        if (!cornerTable.reset(numFaces, (int)(numEncodedVertices + numEncodedSplitSymbols)))
-            return false;
+        cornerTable.reset(numFaces, (int)(numEncodedVertices + numEncodedSplitSymbols));
         
         // Add one attribute data for each attribute decoder.
         for (int i = 0; i < attributeData.length; i++)
@@ -566,58 +436,34 @@ class MeshEdgeBreakerDecoderImpl implements IMeshEdgeBreakerDecoderImpl
             int encodedConnectivitySize;
             if (decoder.getBitstreamVersion() < 20)
             {
-                if (!decoder.getBuffer().decode5(ref14))
-                {
-                    encodedConnectivitySize = ref14[0];
-                    return DracoUtils.failed();
-                }
-                else
-                {
-                    encodedConnectivitySize = ref14[0];
-                }
-                
-            }
-            else if (!Decoding.decodeVarint(ref15, decoder.getBuffer()))
-            {
-                encodedConnectivitySize = ref15[0];
-                return DracoUtils.failed();
+                encodedConnectivitySize = decoder.getBuffer().decodeU32();
             }
             else
             {
-                encodedConnectivitySize = ref15[0];
+                encodedConnectivitySize = Decoding.decodeVarintU32(decoder.getBuffer());
             }
             
             
             if (encodedConnectivitySize == 0 || ((0xffffffffl & encodedConnectivitySize) > decoder.getBuffer().getRemainingSize()))
-                return DracoUtils.failed();
+                throw DracoUtils.failed();
             DecoderBuffer eventBuffer = decoder.getBuffer().subBuffer(encodedConnectivitySize);// new DecoderBuffer(buf, decoder.Buffer. decoder.Buffer.DecodedSize + encodedConnectivitySize, decoder.Buffer.BufferSize - decoder.Buffer.DecodedSize - encodedConnectivitySize);
             
             
             // Decode hole and topology split events.
             topologySplitDecodedBytes = this.decodeHoleAndTopologySplitEvents(eventBuffer);
             if (topologySplitDecodedBytes == -1)
-                return DracoUtils.failed();
+                throw DracoUtils.failed();
         }
         else if (this.decodeHoleAndTopologySplitEvents(decoder.getBuffer()) == -1)
-            return DracoUtils.failed();
+            throw DracoUtils.failed();
         
         traversalDecoder.init(this);
         traversalDecoder.setNumEncodedVertices((int)(numEncodedVertices + numEncodedSplitSymbols));
         traversalDecoder.setNumAttributeData(0xff & numAttributeData);
-        DecoderBuffer traversalEndBuffer;
-        if (!traversalDecoder.start(ref16))
-        {
-            traversalEndBuffer = ref16[0];
-            return DracoUtils.failed();
-        }
-        else
-        {
-            traversalEndBuffer = ref16[0];
-        }
-        
+        DecoderBuffer traversalEndBuffer = traversalDecoder.start();
         int numConnectivityVerts = this.decodeConnectivity(numEncodedSymbols);
         if (numConnectivityVerts == -1)
-            return DracoUtils.failed();
+            throw DracoUtils.failed();
         
         // Set the main buffer to the end of the traversal.
         decoder.setBuffer(traversalEndBuffer.subBuffer(0));
@@ -639,8 +485,7 @@ class MeshEdgeBreakerDecoderImpl implements IMeshEdgeBreakerDecoderImpl
             {
                 for (int ci = 0; ci < cornerTable.getNumCorners(); ci += 3)
                 {
-                    if (!this.decodeAttributeConnectivitiesOnFaceLegacy(ci))
-                        return DracoUtils.failed();
+                    this.decodeAttributeConnectivitiesOnFaceLegacy(ci);
                 }
                 
             }
@@ -648,8 +493,7 @@ class MeshEdgeBreakerDecoderImpl implements IMeshEdgeBreakerDecoderImpl
             {
                 for (int ci = 0; ci < cornerTable.getNumCorners(); ci += 3)
                 {
-                    if (!this.decodeAttributeConnectivitiesOnFace(ci))
-                        return DracoUtils.failed();
+                    this.decodeAttributeConnectivitiesOnFace(ci);
                 }
                 
             }
@@ -690,14 +534,12 @@ class MeshEdgeBreakerDecoderImpl implements IMeshEdgeBreakerDecoderImpl
         }
         
         if (!this.assignPointsToCorners())
-            return DracoUtils.failed();
-        return true;
+            throw DracoUtils.failed();
     }
     
     @Override
-    public boolean onAttributesDecoded()
+    public void onAttributesDecoded()
     {
-        return true;
     }
     
     @Override
@@ -735,9 +577,9 @@ class MeshEdgeBreakerDecoderImpl implements IMeshEdgeBreakerDecoderImpl
                     int pointId = vertexToPointMap[vertId];
                     if (pointId == -1)
                     {
-                        final int tmp17 = numPoints++;
-                        vertexToPointMap[vertId] = tmp17;
-                        pointId = tmp17;
+                        final int tmp0 = numPoints++;
+                        vertexToPointMap[vertId] = tmp0;
+                        pointId = tmp0;
                     }
                     
                     face[c] = pointId;
@@ -858,43 +700,18 @@ class MeshEdgeBreakerDecoderImpl implements IMeshEdgeBreakerDecoderImpl
     }
     
     int decodeHoleAndTopologySplitEvents(DecoderBuffer decoderBuffer)
+        throws DrakoException
     {
         int numTopologySplits;
-        final int[] ref18 = new int[1];
-        final int[] ref19 = new int[1];
-        final int[] ref20 = new int[1];
-        final int[] ref21 = new int[1];
-        final byte[] ref22 = new byte[1];
-        final int[] ref23 = new int[1];
-        final int[] ref24 = new int[1];
-        final long[] ref25 = new long[1];
-        final int[] ref26 = new int[1];
-        final int[] ref27 = new int[1];
-        final int[] ref28 = new int[1];
-        final int[] ref29 = new int[1];
-        final int[] ref30 = new int[1];
-        final int[] ref31 = new int[1];
+        final int[] ref1 = new int[1];
+        final int[] ref2 = new int[1];
         if (decoder.getBitstreamVersion() < 20)
         {
-            if (!decoderBuffer.decode5(ref18))
-            {
-                numTopologySplits = ref18[0];
-                return -1;
-            }
-            else
-            {
-                numTopologySplits = ref18[0];
-            }
-            
-        }
-        else if (!Decoding.decodeVarint(ref19, decoderBuffer))
-        {
-            numTopologySplits = ref19[0];
-            return -1;
+            numTopologySplits = decoderBuffer.decodeU32();
         }
         else
         {
-            numTopologySplits = ref19[0];
+            numTopologySplits = Decoding.decodeVarintU32(decoderBuffer);
         }
         
         
@@ -908,37 +725,9 @@ class MeshEdgeBreakerDecoderImpl implements IMeshEdgeBreakerDecoderImpl
                 for (int i = 0; i < (0xffffffffl & numTopologySplits); ++i)
                 {
                     TopologySplitEventData eventData = new TopologySplitEventData();
-                    if (!decoderBuffer.decode6(ref20))
-                    {
-                        eventData.splitSymbolId = ref20[0];
-                        return -1;
-                    }
-                    else
-                    {
-                        eventData.splitSymbolId = ref20[0];
-                    }
-                    
-                    if (!decoderBuffer.decode6(ref21))
-                    {
-                        eventData.sourceSymbolId = ref21[0];
-                        return -1;
-                    }
-                    else
-                    {
-                        eventData.sourceSymbolId = ref21[0];
-                    }
-                    
-                    byte edgeData;
-                    if (!decoderBuffer.decode3(ref22))
-                    {
-                        edgeData = ref22[0];
-                        return -1;
-                    }
-                    else
-                    {
-                        edgeData = ref22[0];
-                    }
-                    
+                    eventData.splitSymbolId = decoderBuffer.decodeI32();
+                    eventData.sourceSymbolId = decoderBuffer.decodeI32();
+                    byte edgeData = decoderBuffer.decodeU8();
                     eventData.sourceEdge = (byte)(0xff & edgeData & 1);
                     eventData.splitEdge = (byte)((0xff & edgeData) >>> 1 & 1);
                     topologySplitData.add(eventData);
@@ -951,12 +740,9 @@ class MeshEdgeBreakerDecoderImpl implements IMeshEdgeBreakerDecoderImpl
                 for (int i = 0; i < (0xffffffffl & numTopologySplits); ++i)
                 {
                     TopologySplitEventData event_data = new TopologySplitEventData();
-                    int delta;
-                    Decoding.decodeVarint(ref23, decoderBuffer);
-                    delta = ref23[0];
+                    int delta = Decoding.decodeVarintU32(decoderBuffer);
                     event_data.sourceSymbolId = (int)(delta + last_source_symbol_id);
-                    Decoding.decodeVarint(ref24, decoderBuffer);
-                    delta = ref24[0];
+                    delta = Decoding.decodeVarintU32(decoderBuffer);
                     if ((0xffffffffl & delta) > event_data.sourceSymbolId)
                         return -1;
                     event_data.splitSymbolId = event_data.sourceSymbolId - delta;
@@ -964,21 +750,19 @@ class MeshEdgeBreakerDecoderImpl implements IMeshEdgeBreakerDecoderImpl
                     topologySplitData.add(event_data);
                 }
                 
-                long tmp;
-                decoderBuffer.startBitDecoding(false, ref25);
-                tmp = ref25[0];
+                long tmp = decoderBuffer.startBitDecoding(false);
                 for (int i = 0; i < (0xffffffffl & numTopologySplits); ++i)
                 {
                     int edge_data;
                     if (decoder.getBitstreamVersion() < 22)
                     {
-                        decoderBuffer.decodeLeastSignificantBits32(2, ref26);
-                        edge_data = ref26[0];
+                        decoderBuffer.decodeLeastSignificantBits32(2, ref1);
+                        edge_data = ref1[0];
                     }
                     else
                     {
-                        decoderBuffer.decodeLeastSignificantBits32(1, ref27);
-                        edge_data = ref27[0];
+                        decoderBuffer.decodeLeastSignificantBits32(1, ref2);
+                        edge_data = ref2[0];
                     }
                     
                     
@@ -994,29 +778,11 @@ class MeshEdgeBreakerDecoderImpl implements IMeshEdgeBreakerDecoderImpl
         int numHoleEvents = 0;
         if (decoder.getBitstreamVersion() < 20)
         {
-            if (!decoderBuffer.decode5(ref28))
-            {
-                numHoleEvents = ref28[0];
-                return -1;
-            }
-            else
-            {
-                numHoleEvents = ref28[0];
-            }
-            
+            numHoleEvents = decoderBuffer.decodeU32();
         }
         else if (decoder.getBitstreamVersion() < 21)
         {
-            if (!Decoding.decodeVarint(ref29, decoderBuffer))
-            {
-                numHoleEvents = ref29[0];
-                return -1;
-            }
-            else
-            {
-                numHoleEvents = ref29[0];
-            }
-            
+            numHoleEvents = Decoding.decodeVarintU32(decoderBuffer);
         }
         
         
@@ -1027,16 +793,7 @@ class MeshEdgeBreakerDecoderImpl implements IMeshEdgeBreakerDecoderImpl
                 for (int i = 0; (0xffffffffl & i) < (0xffffffffl & numHoleEvents); ++i)
                 {
                     HoleEventData eventData = new HoleEventData();
-                    if (!decoderBuffer.decode6(ref30))
-                    {
-                        eventData.symbolId = ref30[0];
-                        return -1;
-                    }
-                    else
-                    {
-                        eventData.symbolId = ref30[0];
-                    }
-                    
+                    eventData.symbolId = decoderBuffer.decodeI32();
                     holeEventData.add(Struct.byVal(eventData));
                 }
                 
@@ -1047,9 +804,7 @@ class MeshEdgeBreakerDecoderImpl implements IMeshEdgeBreakerDecoderImpl
                 for (int i = 0; i < (0xffffffffl & numHoleEvents); ++i)
                 {
                     HoleEventData event_data = new HoleEventData();
-                    int delta;
-                    Decoding.decodeVarint(ref31, decoderBuffer);
-                    delta = ref31[0];
+                    int delta = Decoding.decodeVarintU32(decoderBuffer);
                     event_data.symbolId = (int)(delta + last_symbol_id);
                     last_symbol_id = event_data.symbolId;
                     holeEventData.add(Struct.byVal(event_data));
@@ -1071,9 +826,9 @@ class MeshEdgeBreakerDecoderImpl implements IMeshEdgeBreakerDecoderImpl
         IntList invalidVertices = new IntList();
         int maxNumVertices = isVertHole.length;
         int numFaces = 0;
-        final Integer[] ref32 = new Integer[1];
-        final byte[] ref34 = new byte[1];
-        final int[] ref35 = new int[1];
+        final Integer[] ref3 = new Integer[1];
+        final byte[] ref5 = new byte[1];
+        final int[] ref6 = new int[1];
         for (int symbolId = 0; symbolId < numSymbols; ++symbolId)
         {
             int face = numFaces++;
@@ -1195,24 +950,24 @@ class MeshEdgeBreakerDecoderImpl implements IMeshEdgeBreakerDecoderImpl
                 int corner_b = activeCornerStack.get(activeCornerStack.getCount() - 1);
                 activeCornerStack.removeAt(activeCornerStack.getCount() - 1);
                 int tmp;
-                if (AsposeUtils.tryGetValue(topologySplitActiveCorners, symbolId, ref32))
+                if (AsposeUtils.tryGetValue(topologySplitActiveCorners, symbolId, ref3))
                 {
-                    tmp = ref32[0] == null ? 0 : ref32[0];
+                    tmp = ref3[0] == null ? 0 : ref3[0];
                     // Topology split event. Move the retrieved edge to the stack.
                     activeCornerStack.add(tmp);
                 }
                 else
                 {
-                    tmp = ref32[0] == null ? 0 : ref32[0];
+                    tmp = ref3[0] == null ? 0 : ref3[0];
                 }
                 
                 
                 if (activeCornerStack.getCount() == 0)
                     return -1;
                 int corner_a = activeCornerStack.get(activeCornerStack.getCount() - 1);
-                final boolean tmp33 = cornerTable.opposite(corner_a) != CornerTable.K_INVALID_CORNER_INDEX;
+                final boolean tmp4 = cornerTable.opposite(corner_a) != CornerTable.K_INVALID_CORNER_INDEX;
                 
-                if (tmp33 || (cornerTable.opposite(corner_b) != CornerTable.K_INVALID_CORNER_INDEX))
+                if (tmp4 || (cornerTable.opposite(corner_b) != CornerTable.K_INVALID_CORNER_INDEX))
                     return -1;
                 int corner = 3 * face;
                 // Update the opposite corner mapping.
@@ -1280,10 +1035,10 @@ class MeshEdgeBreakerDecoderImpl implements IMeshEdgeBreakerDecoderImpl
                 int encoder_symbol_id = numSymbols - symbolId - 1;
                 byte split_edge;
                 int encoderSplitSymbolId;
-                while (this.isTopologySplit(encoder_symbol_id, ref34, ref35))
+                while (this.isTopologySplit(encoder_symbol_id, ref5, ref6))
                 {
-                    split_edge = ref34[0];
-                    encoderSplitSymbolId = ref35[0];
+                    split_edge = ref5[0];
+                    encoderSplitSymbolId = ref6[0];
                     if (encoderSplitSymbolId < 0)
                         return -1;
                     // Wrong split symbol id.
@@ -1302,8 +1057,8 @@ class MeshEdgeBreakerDecoderImpl implements IMeshEdgeBreakerDecoderImpl
                     topologySplitActiveCorners.put(decoderSplitSymbolId, new_active_corner);
                 }
                 
-                split_edge = ref34[0];
-                encoderSplitSymbolId = ref35[0];
+                split_edge = ref5[0];
+                encoderSplitSymbolId = ref6[0];
             }
             
         }
@@ -1470,14 +1225,12 @@ class MeshEdgeBreakerDecoderImpl implements IMeshEdgeBreakerDecoderImpl
      *  processed face.
      *
      */
-    private boolean decodeAttributeConnectivitiesOnFaceLegacy(int corner)
+    private void decodeAttributeConnectivitiesOnFaceLegacy(int corner)
     {
         // Three corners of the face.
         this.decodeAttributeConnectivitiesOnFaceLegacyImpl(corner);
         this.decodeAttributeConnectivitiesOnFaceLegacyImpl(cornerTable.next(corner));
         this.decodeAttributeConnectivitiesOnFaceLegacyImpl(cornerTable.previous(corner));
-        
-        return true;
     }
     
     private void decodeAttributeConnectivitiesOnFaceLegacyImpl(int corner)
@@ -1511,13 +1264,12 @@ class MeshEdgeBreakerDecoderImpl implements IMeshEdgeBreakerDecoderImpl
         
     }
     
-    private boolean decodeAttributeConnectivitiesOnFace(int corner)
+    private void decodeAttributeConnectivitiesOnFace(int corner)
     {
         int src_face_id = cornerTable.face(corner);
         this.decodeAttributeConnectivitiesOnFace(corner, src_face_id);
         this.decodeAttributeConnectivitiesOnFace(cornerTable.next(corner), src_face_id);
         this.decodeAttributeConnectivitiesOnFace(cornerTable.previous(corner), src_face_id);
-        return true;
     }
     
     private void decodeAttributeConnectivitiesOnFace(int corner, int src_face_id)

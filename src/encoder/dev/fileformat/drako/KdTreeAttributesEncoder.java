@@ -27,7 +27,8 @@ class KdTreeAttributesEncoder extends AttributesEncoder
     }
     
     @Override
-    protected boolean transformAttributesToPortableFormat()
+    protected void transformAttributesToPortableFormat()
+        throws DrakoException
     {
         int num_points = this.getEncoder().getPointCloud().getNumPoints();
         int num_components = 0;
@@ -52,7 +53,7 @@ class KdTreeAttributesEncoder extends AttributesEncoder
                 AttributeQuantizationTransform attribute_quantization_transform = new AttributeQuantizationTransform();
                 int quantization_bits = this.getEncoder().getOptions().getQuantizationBits(att);
                 if (quantization_bits < 1)
-                    return false;
+                    throw DracoUtils.failed();
                 {
                     // Compute quantization settings from the attribute values.
                     attribute_quantization_transform.computeParameters(att, quantization_bits);
@@ -98,12 +99,11 @@ class KdTreeAttributesEncoder extends AttributesEncoder
             
         }
         
-        
-        return true;
     }
     
     @Override
-    protected boolean encodePortableAttributes(EncoderBuffer out_buffer)
+    protected void encodePortableAttributes(EncoderBuffer out_buffer)
+        throws DrakoException
     {
         byte compression_level = (byte)Math.min(10 - this.getEncoder().getOptions().getSpeed(), 6);
         final int[] ref1 = new int[1];
@@ -146,10 +146,10 @@ class KdTreeAttributesEncoder extends AttributesEncoder
                 num_processed_quantized_attributes++;
             }
             else
-                return false;
+                throw DracoUtils.failed();
             
             if (source_att == null)
-                return false;
+                throw DracoUtils.failed();
             
             // Copy source_att to the vector.
             if (source_att.getDataType() == DataType.UINT32)
@@ -222,13 +222,12 @@ class KdTreeAttributesEncoder extends AttributesEncoder
         }
         
         DynamicIntegerPointsKdTreeEncoder points_encoder = new DynamicIntegerPointsKdTreeEncoder(0xff & compression_level, num_components_);
-        if (!points_encoder.encodePoints(point_vector, num_bits, out_buffer))
-            return false;
-        return true;
+        points_encoder.encodePoints(point_vector, num_bits, out_buffer);
     }
     
     @Override
-    protected boolean encodeDataNeededByPortableTransforms(EncoderBuffer out_buffer)
+    protected void encodeDataNeededByPortableTransforms(EncoderBuffer out_buffer)
+        throws DrakoException
     {
         // Store quantization settings for all attributes that need it.
         for (int i = 0; i < attribute_quantization_transforms_.size(); ++i)
@@ -243,8 +242,6 @@ class KdTreeAttributesEncoder extends AttributesEncoder
             Encoding.encodeVarint(min_signed_values_.get(i), out_buffer);
         }
         
-        
-        return true;
     }
     
     // Copy data directly off of an attribute buffer interleaved into internal

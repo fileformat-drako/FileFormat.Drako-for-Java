@@ -38,7 +38,7 @@ class AttributeQuantizationTransform extends AttributeTransform
         out_data.appendValue(range_);
     }
     
-    public boolean transformAttribute(PointAttribute attribute, int[] point_ids, PointAttribute target_attribute)
+    public void transformAttribute(PointAttribute attribute, int[] point_ids, PointAttribute target_attribute)
     {
         if (point_ids.length == 0)
         {
@@ -49,7 +49,6 @@ class AttributeQuantizationTransform extends AttributeTransform
             this.generatePortableAttribute(attribute, point_ids, target_attribute.getNumUniqueEntries(), target_attribute);
         }
         
-        return true;
     }
     
     public void setParameters(int quantization_bits, float[] min_values, int num_components, float range)
@@ -59,10 +58,11 @@ class AttributeQuantizationTransform extends AttributeTransform
         this.range_ = range;
     }
     
-    public boolean computeParameters(PointAttribute attribute, int quantization_bits)
+    public void computeParameters(PointAttribute attribute, int quantization_bits)
+        throws DrakoException
     {
         if (quantization_bits_ != -1)
-            return DracoUtils.failed();
+            throw DracoUtils.failed();
         
         this.quantization_bits_ = quantization_bits;
         int num_components = attribute.getComponentsCount();
@@ -111,22 +111,19 @@ class AttributeQuantizationTransform extends AttributeTransform
             this.range_ = 1.0f;
         }
         
-        
-        return true;
     }
     
-    public boolean encodeParameters(EncoderBuffer encoder_buffer)
+    public void encodeParameters(EncoderBuffer encoder_buffer)
+        throws DrakoException
     {
         if (quantization_bits_ != -1)
         {
             encoder_buffer.encode(min_values_);
             encoder_buffer.encode(range_);
             encoder_buffer.encode((byte)quantization_bits_);
-            return true;
         }
-        
-        
-        return DracoUtils.failed();
+        else
+            throw DracoUtils.failed();
     }
     
     public void generatePortableAttribute(PointAttribute attribute, int num_points, PointAttribute target_attribute)

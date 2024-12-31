@@ -7,29 +7,19 @@ class PointCloudSequentialDecoder extends PointCloudDecoder
     }
     
     @Override
-    protected boolean decodeGeometryData()
+    protected void decodeGeometryData()
+        throws DrakoException
     {
-        int num_points;
-        final int[] ref0 = new int[1];
-        if (!this.buffer.decode6(ref0))
-        {
-            num_points = ref0[0];
-            return false;
-        }
-        else
-        {
-            num_points = ref0[0];
-        }
-        
+        int num_points = this.buffer.decodeI32();
         this.getPointCloud().setNumPoints(num_points);
-        return true;
     }
     
     @Override
-    protected boolean createAttributesDecoder(int attrDecoderId)
+    protected void createAttributesDecoder(int attrDecoderId)
+        throws DrakoException
     {
         // Always create the basic attribute decoder.
-        return this.setAttributesDecoder(attrDecoderId, new SequentialAttributeDecodersController(new LinearSequencer(this.getPointCloud().getNumPoints())));
+        this.setAttributesDecoder(attrDecoderId, new SequentialAttributeDecodersController(new LinearSequencer(this.getPointCloud().getNumPoints())));
     }
     
 }

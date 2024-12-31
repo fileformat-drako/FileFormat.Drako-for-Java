@@ -12,13 +12,12 @@ class PredictionSchemeNormalOctahedronTransformBase extends PredictionSchemeTran
         return octahedronToolBox.getQuantizationBits();
     }
     
-    protected boolean setMaxQuantizedValue(int value)
+    protected void setMaxQuantizedValue(int value)
     {
         if (value % 2 == 0)
-            return false;
+            throw new IllegalArgumentException("Invalid quantized value");
         int q = DracoUtils.mostSignificantBit(value) + 1;
         octahedronToolBox.setQuantizationBits(q);
-        return true;
     }
     
     // For correction values.

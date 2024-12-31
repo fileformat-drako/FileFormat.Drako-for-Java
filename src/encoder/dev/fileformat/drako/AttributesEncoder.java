@@ -42,19 +42,19 @@ abstract class AttributesEncoder
      *  process encoders in a different order from the decoder.
      *
      */
-    public boolean initialize(PointCloudEncoder encoder, DracoPointCloud pc)
+    public void initialize(PointCloudEncoder encoder, DracoPointCloud pc)
+        throws DrakoException
     {
         
         this.pointCloudEncoder = encoder;
         this.pointCloud = pc;
-        return true;
     }
     
     /**
      *  Encodes data needed by the target attribute decoder.
      *
      */
-    public boolean encodeAttributesEncoderData(EncoderBuffer outBuffer)
+    public void encodeAttributesEncoderData(EncoderBuffer outBuffer)
     {
         
         // Encode data about all attributes.
@@ -70,7 +70,6 @@ abstract class AttributesEncoder
             Encoding.encodeVarint(0xffff & pa.getUniqueId(), outBuffer);
         }
         
-        return true;
     }
     
     /**
@@ -85,41 +84,39 @@ abstract class AttributesEncoder
      *  derived classes.
      *
      */
-    public boolean encodeAttributes(EncoderBuffer out_buffer)
+    public void encodeAttributes(EncoderBuffer out_buffer)
+        throws DrakoException
     {
         
-        if (!this.transformAttributesToPortableFormat())
-            return false;
-        if (!this.encodePortableAttributes(out_buffer))
-            return false;
+        this.transformAttributesToPortableFormat();
+        this.encodePortableAttributes(out_buffer);
         // Encode data needed by portable transforms after the attribute is encoded.
         // This corresponds to the order in which the data is going to be decoded by
         // the decoder.
-        if (!this.encodeDataNeededByPortableTransforms(out_buffer))
-            return false;
-        return true;
+        this.encodeDataNeededByPortableTransforms(out_buffer);
     }
     
     // Transforms the input attribute data into a form that should be losslessly
     // encoded (transform itself can be lossy).
     // 
-    protected boolean transformAttributesToPortableFormat()
+    protected void transformAttributesToPortableFormat()
+        throws DrakoException
     {
-        return true;
     }
     
     // Losslessly encodes data of all portable attributes.
     // Precondition: All attributes must have been transformed into portable
     // format at this point (see TransformAttributesToPortableFormat() method).
     // 
-    protected abstract boolean encodePortableAttributes(EncoderBuffer out_buffer);
+    protected abstract void encodePortableAttributes(EncoderBuffer out_buffer)
+        throws DrakoException;
     
     // Encodes any data needed to revert the transform to portable format for each
     // attribute (e.g. data needed for dequantization of quantized values).
     // 
-    protected boolean encodeDataNeededByPortableTransforms(EncoderBuffer out_buffer)
+    protected void encodeDataNeededByPortableTransforms(EncoderBuffer out_buffer)
+        throws DrakoException
     {
-        return true;
     }
     
     /**

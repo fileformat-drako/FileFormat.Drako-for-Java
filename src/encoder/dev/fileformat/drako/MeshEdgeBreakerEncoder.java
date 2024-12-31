@@ -32,7 +32,7 @@ class MeshEdgeBreakerEncoder extends MeshEncoder
     }
     
     @Override
-    protected boolean initializeEncoder()
+    protected void initializeEncoder()
     {
         this.impl = null;
         if (this.options.getCompressionLevel() == DracoCompressionLevel.OPTIMAL)
@@ -46,30 +46,27 @@ class MeshEdgeBreakerEncoder extends MeshEncoder
             this.impl = new MeshEdgeBreakerEncoderImpl(new MeshEdgeBreakerTraversalEncoder());
         }
         
-        if (!impl.init(this))
-            return false;
-        return true;
+        impl.init(this);
     }
     
     @Override
-    protected boolean encodeConnectivity()
+    protected void encodeConnectivity()
+        throws DrakoException
     {
-        return impl.encodeConnectivity();
+        impl.encodeConnectivity();
     }
     
     @Override
-    protected boolean generateAttributesEncoder(int attId)
+    protected void generateAttributesEncoder(int attId)
+        throws DrakoException
     {
-        
-        if (!impl.generateAttributesEncoder(attId))
-            return false;
-        return true;
+        impl.generateAttributesEncoder(attId);
     }
     
     @Override
-    protected boolean encodeAttributesEncoderIdentifier(int attEncoderId)
+    protected void encodeAttributesEncoderIdentifier(int attEncoderId)
     {
-        return impl.encodeAttributesEncoderIdentifier(attEncoderId);
+        impl.encodeAttributesEncoderIdentifier(attEncoderId);
     }
     
     

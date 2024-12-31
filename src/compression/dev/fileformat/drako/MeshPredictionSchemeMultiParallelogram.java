@@ -13,7 +13,7 @@ class MeshPredictionSchemeMultiParallelogram extends MeshPredictionScheme
     }
     
     @Override
-    public boolean computeCorrectionValues(IntSpan inData, IntSpan outCorr, int size, int numComponents, int[] entryToPointIdMap)
+    public void computeCorrectionValues(IntSpan inData, IntSpan outCorr, int size, int numComponents, int[] entryToPointIdMap)
     {
         final int[] ref0 = new int[1];
         final int[] ref1 = new int[1];
@@ -104,11 +104,10 @@ class MeshPredictionSchemeMultiParallelogram extends MeshPredictionScheme
         }
         
         this.transform_.computeCorrection(inData, predVals, outCorr, 0);
-        return true;
     }
     
     @Override
-    public boolean computeOriginalValues(IntSpan inCorr, IntSpan outData, int size, int numComponents, int[] entryToPointIdMap)
+    public void computeOriginalValues(IntSpan inCorr, IntSpan outData, int size, int numComponents, int[] entryToPointIdMap)
     {
         this.transform_.initializeDecoding(numComponents);
         IntSpan predVals = IntSpan.wrap(new int[numComponents]);
@@ -169,7 +168,6 @@ class MeshPredictionSchemeMultiParallelogram extends MeshPredictionScheme
             
         }
         
-        return true;
     }
     
 }

@@ -102,7 +102,7 @@ class RAnsSymbolEncoder extends RAnsBitCodec
                     for (int j = (int)(numSymbols - 1); j > 0; --j)
                     {
                         int symbolId = sortedProbabilities[j];
-                        if (probabilityTable[symbolId].prob <= 1)
+                        if ((0xffffffffl & probabilityTable[symbolId].prob) <= 1)
                         {
                             if (j == (numSymbols - 1))
                                 return;

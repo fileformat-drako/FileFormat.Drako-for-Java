@@ -5,42 +5,32 @@ class SequentialIntegerAttributeDecoder extends SequentialAttributeDecoder
 {    
     private PredictionScheme predictionScheme;
     @Override
-    protected boolean decodeValues(int[] pointIds, DecoderBuffer inBuffer)
+    protected void decodeValues(int[] pointIds, DecoderBuffer inBuffer)
+        throws DrakoException
     {
         int numValues = pointIds.length;
-        byte predictionSchemeMethod;
-        final byte[] ref0 = new byte[1];
-        final byte[] ref1 = new byte[1];
-        inBuffer.decode2(ref0);
-        predictionSchemeMethod = ref0[0];
+        byte predictionSchemeMethod = inBuffer.decodeI8();
         
         if (predictionSchemeMethod != (byte)PredictionSchemeMethod.NONE)
         {
-            byte predictionTransformType;
-            inBuffer.decode2(ref1);
-            predictionTransformType = ref1[0];
+            byte predictionTransformType = inBuffer.decodeI8();
             this.predictionScheme = this.createIntPredictionScheme((int)predictionSchemeMethod, (int)predictionTransformType);
         }
         
         
         if (predictionScheme != null)
         {
-            if (!this.initPredictionScheme(predictionScheme))
-                return DracoUtils.failed();
+            this.initPredictionScheme(predictionScheme);
         }
         
         
-        if (!this.decodeIntegerValues(pointIds, inBuffer))
-            return DracoUtils.failed();
+        this.decodeIntegerValues(pointIds, inBuffer);
         
         if (this.getDecoder() != null && (this.getDecoder().getBitstreamVersion() < 20))
         {
-            if (!this.storeValues(numValues))
-                return DracoUtils.failed();
+            this.storeValues(numValues);
         }
         
-        
-        return true;
     }
     
     protected PredictionScheme createIntPredictionScheme(int method, int transformType)
@@ -107,49 +97,26 @@ class SequentialIntegerAttributeDecoder extends SequentialAttributeDecoder
         return ByteSpan.wrap(buf, 0, numValues * 4).asIntSpan();
     }
     
-    public boolean decodeIntegerValues(int[] pointIds, DecoderBuffer inBuffer)
+    public void decodeIntegerValues(int[] pointIds, DecoderBuffer inBuffer)
+        throws DrakoException
     {
         int numComponents = this.getNumValueComponents();
         int numEntries = pointIds.length;
         int numValues = numEntries * numComponents;
-        final byte[] ref2 = new byte[1];
-        final byte[] ref3 = new byte[1];
-        final int[] ref4 = new int[1];
         if (numComponents <= 0)
-            return DracoUtils.failed();
+            throw DracoUtils.failed();
         IntSpan values = this.getValues(numEntries);
         if (values == null)
-            return DracoUtils.failed();
-        byte compressed;
-        if (!inBuffer.decode3(ref2))
-        {
-            compressed = ref2[0];
-            return DracoUtils.failed();
-        }
-        else
-        {
-            compressed = ref2[0];
-        }
-        
+            throw DracoUtils.failed();
+        byte compressed = inBuffer.decodeU8();
         if ((0xff & compressed) > 0)
         {
             // Decode compressed values.
-            if (!Decoding.decodeSymbols(numValues, numComponents, inBuffer, values))
-                return DracoUtils.failed();
+            Decoding.decodeSymbols(numValues, numComponents, inBuffer, values);
         }
         else
         {
-            byte numBytes;
-            if (!inBuffer.decode3(ref3))
-            {
-                numBytes = ref3[0];
-                return DracoUtils.failed();
-            }
-            else
-            {
-                numBytes = ref3[0];
-            }
-            
+            byte numBytes = inBuffer.decodeU8();
             
             //if (numBytes == sizeof(int))
             //{
@@ -160,10 +127,7 @@ class SequentialIntegerAttributeDecoder extends SequentialAttributeDecoder
             //{
             for (int i = 0; i < values.size(); ++i)
             {
-                int tmp;
-                inBuffer.decode6(ref4);
-                tmp = ref4[0];
-                values.put(i, tmp);
+                values.put(i, inBuffer.decodeI32());
             }
             
             //}
@@ -180,25 +144,23 @@ class SequentialIntegerAttributeDecoder extends SequentialAttributeDecoder
         // If the data was encoded with a prediction scheme, we must revert it.
         if (predictionScheme != null)
         {
-            if (!predictionScheme.decodePredictionData(inBuffer))
-                return DracoUtils.failed();
-            
-            if (!predictionScheme.computeOriginalValues(values, values, values.size(), numComponents, pointIds))
-                return DracoUtils.failed();
+            predictionScheme.decodePredictionData(inBuffer);
+            predictionScheme.computeOriginalValues(values, values, values.size(), numComponents, pointIds);
         }
         
-        return true;
     }
     
     @Override
-    public boolean transformAttributeToOriginalFormat(int[] pointIds)
+    public void transformAttributeToOriginalFormat(int[] pointIds)
+        throws DrakoException
     {
         if (this.decoder != null && (this.decoder.getBitstreamVersion() < 20))
-            return true;
-        return this.storeValues(pointIds.length);
+            return;
+        this.storeValues(pointIds.length);
     }
     
-    protected boolean storeValues(int numValues)
+    protected void storeValues(int numValues)
+        throws DrakoException
     {
         switch(this.getAttribute().getDataType())
         {
@@ -221,10 +183,11 @@ class SequentialIntegerAttributeDecoder extends SequentialAttributeDecoder
                 break;
             }
             default:
-                return DracoUtils.failed();
+            {
+                throw DracoUtils.failed();
+            }
         }
         
-        return true;
     }
     
     /**

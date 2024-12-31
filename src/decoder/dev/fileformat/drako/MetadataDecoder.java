@@ -20,37 +20,15 @@ class MetadataDecoder
     
     static final int K_MAX_SUBMETADATA_LEVEL = 1000;
     public GeometryMetadata decode(DecoderBuffer buffer)
+        throws DrakoException
     {
-        int numAttrMetadata = 0;
-        final int[] ref0 = new int[1];
-        final int[] ref1 = new int[1];
-        if (!Decoding.decodeVarint(ref0, buffer))
-        {
-            numAttrMetadata = ref0[0];
-            return null;
-        }
-        else
-        {
-            numAttrMetadata = ref0[0];
-        }
-        
+        int numAttrMetadata = Decoding.decodeVarintU32(buffer);
         GeometryMetadata metadata = new GeometryMetadata();
         for (int i = 0; i < (0xffffffffl & numAttrMetadata); i++)
         {
-            int attUniqueId;
-            if (!Decoding.decodeVarint(ref1, buffer))
-            {
-                attUniqueId = ref1[0];
-                return null;
-            }
-            else
-            {
-                attUniqueId = ref1[0];
-            }
-            
+            int attUniqueId = Decoding.decodeVarintU32(buffer);
             Metadata attMetadata = new Metadata();
-            if (!this.decodeMetadata(buffer, attMetadata))
-                return null;
+            this.decodeMetadata(buffer, attMetadata);
             metadata.attributeMetadata.put(attUniqueId, attMetadata);
         }
         
@@ -59,11 +37,10 @@ class MetadataDecoder
         return metadata;
     }
     
-    private boolean decodeMetadata(DecoderBuffer buffer, Metadata metadata)
+    private void decodeMetadata(DecoderBuffer buffer, Metadata metadata)
+        throws DrakoException
     {
         ArrayList<MetadataTuple> stack = new ArrayList<MetadataTuple>();
-        final int[] ref2 = new int[1];
-        final int[] ref3 = new int[1];
         stack.add(new MetadataTuple(null, metadata, 0));
         while (!stack.isEmpty())
         {
@@ -73,47 +50,26 @@ class MetadataDecoder
             if (mp.parent != null)
             {
                 if (mp.level > K_MAX_SUBMETADATA_LEVEL)
-                    return false;
+                    throw DracoUtils.failed();
                 String subMetadataName = this.decodeName(buffer);
                 if (subMetadataName == null)
-                    return false;
+                    throw DracoUtils.failed();
                 Metadata subMetadata = new Metadata();
                 metadata = subMetadata;
                 mp.parent.subMetadata.put(subMetadataName, subMetadata);
             }
             
             if (metadata == null)
-                return false;
-            int numEntries = 0;
-            if (!Decoding.decodeVarint(ref2, buffer))
-            {
-                numEntries = ref2[0];
-                return false;
-            }
-            else
-            {
-                numEntries = ref2[0];
-            }
-            
+                throw DracoUtils.failed();
+            int numEntries = Decoding.decodeVarintU32(buffer);
             for (int i = 0; i < (0xffffffffl & numEntries); i++)
             {
-                if (!this.decodeEntry(buffer, metadata))
-                    return false;
+                this.decodeEntry(buffer, metadata);
             }
             
-            int numSubMetadata = 0;
-            if (!Decoding.decodeVarint(ref3, buffer))
-            {
-                numSubMetadata = ref3[0];
-                return false;
-            }
-            else
-            {
-                numSubMetadata = ref3[0];
-            }
-            
+            int numSubMetadata = Decoding.decodeVarintU32(buffer);
             if ((0xffffffffl & numSubMetadata) > buffer.getRemainingSize())
-                return false;
+                throw DracoUtils.failed();
             for (int i = 0; i < (0xffffffffl & numSubMetadata); i++)
             {
                 stack.add(new MetadataTuple(metadata, null, mp.parent != null ? mp.level + 1 : mp.level));
@@ -121,50 +77,27 @@ class MetadataDecoder
             
         }
         
-        
-        return true;
     }
     
-    private boolean decodeEntry(DecoderBuffer buffer, Metadata metadata)
+    private void decodeEntry(DecoderBuffer buffer, Metadata metadata)
+        throws DrakoException
     {
         String entryName = this.decodeName(buffer);
-        final int[] ref4 = new int[1];
         if (entryName == null)
-            return false;
-        int dataSize = 0;
-        if (!Decoding.decodeVarint(ref4, buffer))
-        {
-            dataSize = ref4[0];
-            return false;
-        }
-        else
-        {
-            dataSize = ref4[0];
-        }
-        
+            throw DracoUtils.failed();
+        int dataSize = Decoding.decodeVarintU32(buffer);
         if (dataSize == 0 || ((0xffffffffl & dataSize) > buffer.getRemainingSize()))
-            return false;
+            throw DracoUtils.failed();
         byte[] entryValue = new byte[dataSize];
         if (!buffer.decode(entryValue, dataSize))
-            return false;
+            throw DracoUtils.failed();
         metadata.entries.put(entryName, entryValue);
-        return true;
     }
     
     private String decodeName(DecoderBuffer buffer)
+        throws DrakoException
     {
-        int nameLen = 0;
-        final int[] ref5 = new int[1];
-        if (!Decoding.decodeVarint(ref5, buffer))
-        {
-            nameLen = ref5[0];
-            return null;
-        }
-        else
-        {
-            nameLen = ref5[0];
-        }
-        
+        int nameLen = Decoding.decodeVarintU32(buffer);
         byte[] bytes = new byte[nameLen];
         if (!buffer.decode(bytes, bytes.length))
             return null;

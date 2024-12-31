@@ -107,7 +107,7 @@ final class VertexCornersIterator implements Struct<VertexCornersIterator>, Seri
         this.left_traversal_ = src.left_traversal_;
     }
     
-    static final long serialVersionUID = 1645183214L;
+    static final long serialVersionUID = -1504785517L;
     @Override
     public int hashCode()
     {

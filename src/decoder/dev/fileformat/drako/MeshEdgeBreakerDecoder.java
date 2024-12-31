@@ -25,20 +25,10 @@ class MeshEdgeBreakerDecoder extends MeshDecoder
     }
     
     @Override
-    protected boolean initializeDecoder()
+    protected void initializeDecoder()
+        throws DrakoException
     {
-        byte traversalDecoderType;
-        final byte[] ref0 = new byte[1];
-        if (!this.buffer.decode3(ref0))
-        {
-            traversalDecoderType = ref0[0];
-            return DracoUtils.failed();
-        }
-        else
-        {
-            traversalDecoderType = ref0[0];
-        }
-        
+        byte traversalDecoderType = this.buffer.decodeU8();
         this.impl = null;
         if (traversalDecoderType == 0)
         {
@@ -53,26 +43,27 @@ class MeshEdgeBreakerDecoder extends MeshDecoder
             this.impl = new MeshEdgeBreakerDecoderImpl(this, new MeshEdgeBreakerTraversalValenceDecoder());
         }
         else
-            return DracoUtils.failed();
-        return true;
+            throw DracoUtils.failed();
     }
     
     @Override
-    protected boolean createAttributesDecoder(int attDecoderId)
+    protected void createAttributesDecoder(int attDecoderId)
+        throws DrakoException
     {
-        return impl.createAttributesDecoder(attDecoderId);
+        impl.createAttributesDecoder(attDecoderId);
     }
     
     @Override
-    protected boolean decodeConnectivity()
+    protected void decodeConnectivity()
+        throws DrakoException
     {
-        return impl.decodeConnectivity();
+        impl.decodeConnectivity();
     }
     
     @Override
-    protected boolean onAttributesDecoded()
+    protected void onAttributesDecoded()
     {
-        return impl.onAttributesDecoded();
+        impl.onAttributesDecoded();
     }
     
     

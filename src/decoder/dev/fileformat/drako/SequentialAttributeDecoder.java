@@ -10,12 +10,12 @@ class SequentialAttributeDecoder
     protected PointAttribute attribute;
     PointAttribute portableAttribute;
     private int attributeId;
-    public boolean initialize(PointCloudDecoder decoder, int attributeId)
+    public void initialize(PointCloudDecoder decoder, int attributeId)
+        throws DrakoException
     {
         this.decoder = decoder;
         this.attribute = decoder.getPointCloud().attribute(attributeId);
         this.attributeId = attributeId;
-        return true;
     }
     
     /**
@@ -23,19 +23,17 @@ class SequentialAttributeDecoder
      *  standalone decoding of an attribute without an PointCloudDecoder.
      *
      */
-    public boolean initializeStandalone(PointAttribute attribute)
+    public void initializeStandalone(PointAttribute attribute)
     {
         this.attribute = attribute;
         this.attributeId = -1;
-        return true;
     }
     
-    public boolean decode(int[] pointIds, DecoderBuffer inBuffer)
+    public void decode(int[] pointIds, DecoderBuffer inBuffer)
+        throws DrakoException
     {
         attribute.reset(pointIds.length);
-        if (!this.decodeValues(pointIds, inBuffer))
-            return DracoUtils.failed();
-        return true;
+        this.decodeValues(pointIds, inBuffer);
     }
     
     public PointAttribute getAttribute()
@@ -59,13 +57,14 @@ class SequentialAttributeDecoder
      *  cannot be used).
      *
      */
-    protected boolean initPredictionScheme(PredictionScheme ps)
+    protected void initPredictionScheme(PredictionScheme ps)
+        throws DrakoException
     {
         for (int i = 0; i < ps.getNumParentAttributes(); ++i)
         {
             int attId = decoder.getPointCloud().getNamedAttributeId(ps.getParentAttributeType(i));
             if (attId == -1)
-                return DracoUtils.failed();
+                throw DracoUtils.failed();
             // Requested attribute does not exist.
             PointAttribute parentAttribute;
             if (decoder.getBitstreamVersion() < 20)
@@ -77,11 +76,11 @@ class SequentialAttributeDecoder
                 parentAttribute = decoder.getPortableAttribute(attId);
             }
             
-            if (parentAttribute == null || !ps.setParentAttribute(parentAttribute))
-                return DracoUtils.failed();
+            if (parentAttribute == null)
+                throw DracoUtils.failed();
+            ps.setParentAttribute(parentAttribute);
         }
         
-        return true;
     }
     
     /**
@@ -89,7 +88,8 @@ class SequentialAttributeDecoder
      *  for specialized decoders.
      *
      */
-    protected boolean decodeValues(int[] pointIds, DecoderBuffer inBuffer)
+    protected void decodeValues(int[] pointIds, DecoderBuffer inBuffer)
+        throws DrakoException
     {
         int numValues = pointIds.length;
         int entrySize = attribute.getByteStride();
@@ -99,33 +99,32 @@ class SequentialAttributeDecoder
         for (int i = 0; i < numValues; ++i)
         {
             if (!inBuffer.decode(valueData, entrySize))
-                return DracoUtils.failed();
+                throw DracoUtils.failed();
             attribute.getBuffer().write(outBytePos, valueData, entrySize);
             outBytePos += entrySize;
         }
         
-        return true;
     }
     
-    public boolean decodePortableAttribute(int[] pointIds, DecoderBuffer in_buffer)
+    public void decodePortableAttribute(int[] pointIds, DecoderBuffer in_buffer)
+        throws DrakoException
     {
-        if (attribute.getComponentsCount() <= 0 || !attribute.reset(pointIds.length))
-            return DracoUtils.failed();
-        if (!this.decodeValues(pointIds, in_buffer))
-            return DracoUtils.failed();
-        return true;
+        if (attribute.getComponentsCount() <= 0)
+            throw DracoUtils.failed();
+        attribute.reset(pointIds.length);
+        this.decodeValues(pointIds, in_buffer);
     }
     
-    public boolean decodeDataNeededByPortableTransform(int[] pointIds, DecoderBuffer in_buffer)
-    {
-        // Default implementation does not apply any transform.
-        return true;
-    }
-    
-    public boolean transformAttributeToOriginalFormat(int[] pointIds)
+    public void decodeDataNeededByPortableTransform(int[] pointIds, DecoderBuffer in_buffer)
+        throws DrakoException
     {
         // Default implementation does not apply any transform.
-        return true;
+    }
+    
+    public void transformAttributeToOriginalFormat(int[] pointIds)
+        throws DrakoException
+    {
+        // Default implementation does not apply any transform.
     }
     
     public PointAttribute getPortableAttribute()

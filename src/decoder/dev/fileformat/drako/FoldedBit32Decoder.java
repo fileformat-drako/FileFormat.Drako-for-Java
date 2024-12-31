@@ -16,16 +16,16 @@ class FoldedBit32Decoder implements IBitDecoder
     
     // Sets |source_buffer| as the buffer to decode bits from.
     // 
-    public boolean startDecoding(DecoderBuffer source_buffer)
+    public void startDecoding(DecoderBuffer source_buffer)
+        throws DrakoException
     {
         for (int i = 0; i < 32; i++)
         {
-            if (!folded_number_decoders_[i].startDecoding(source_buffer))
-                return false;
+            folded_number_decoders_[i].startDecoding(source_buffer);
         }
         
         
-        return bit_decoder_.startDecoding(source_buffer);
+        bit_decoder_.startDecoding(source_buffer);
     }
     
     // Decode one bit. Returns true if the bit is a 1, otherwise false.

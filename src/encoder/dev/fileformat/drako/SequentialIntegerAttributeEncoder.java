@@ -26,39 +26,47 @@ class SequentialIntegerAttributeEncoder extends SequentialAttributeEncoder
     }
     
     @Override
-    public boolean initialize(PointCloudEncoder encoder, int attributeId)
+    public void initialize(PointCloudEncoder encoder, int attributeId)
+        throws DrakoException
     {
-        if (!super.initialize(encoder, attributeId))
-            return false;
+        super.initialize(encoder, attributeId);
         
         // When encoding integers, this encoder currently works only for integer
         // attributes up to 32 bits.
         
         if (this.getUniqueId() == SequentialAttributeEncoderType.INTEGER && !DracoUtils.isIntegerType(this.getAttribute().getDataType()))
-            return false;
+            throw DracoUtils.failed();
         int predictionSchemeMethod = encoder.getOptions().getAttributePredictionScheme(this.getAttribute());
         
         this.predictionScheme = this.createIntPredictionScheme(predictionSchemeMethod);
         
-        if (predictionScheme != null && !this.initPredictionScheme(predictionScheme))
+        if (predictionScheme != null)
         {
-            this.predictionScheme = null;
+            try
+            {
+                this.initPredictionScheme(predictionScheme);
+            }
+            catch(Exception $e)
+            {
+                this.predictionScheme = null;
+            }
+            
         }
         
-        
-        return true;
     }
     
     @Override
-    public boolean transformAttributeToPortableFormat(int[] point_ids)
+    public void transformAttributeToPortableFormat(int[] point_ids)
     {
         if (this.getEncoder() != null)
         {
-            if (!this.prepareValues(point_ids, this.getEncoder().getPointCloud().getNumPoints()))
-                return false;
+            this.prepareValues(point_ids, this.getEncoder().getPointCloud().getNumPoints());
         }
-        else if (!this.prepareValues(point_ids, 0))
-            return false;
+        else
+        {
+            this.prepareValues(point_ids, 0);
+        }
+        
         
         // Update point to attribute mapping with the portable attribute if the
         // attribute is a parent attribute (for now, we can skip it otherwise).
@@ -87,21 +95,19 @@ class SequentialIntegerAttributeEncoder extends SequentialAttributeEncoder
             
         }
         
-        
-        return true;
     }
     
     @Override
-    protected boolean encodeValues(int[] pointIds, EncoderBuffer outBuffer)
+    protected void encodeValues(int[] pointIds, EncoderBuffer outBuffer)
+        throws DrakoException
     {
         PointAttribute attrib = this.getAttribute();
         if (attrib.getNumUniqueEntries() == 0)
-            return true;
+            return;
         byte prediction_scheme_method = (byte)PredictionSchemeMethod.NONE;
         if (predictionScheme != null)
         {
-            if (!this.setPredictionSchemeParentAttributes(predictionScheme))
-                return false;
+            this.setPredictionSchemeParentAttributes(predictionScheme);
             
             prediction_scheme_method = (byte)(predictionScheme.getPredictionMethod());
         }
@@ -145,8 +151,7 @@ class SequentialIntegerAttributeEncoder extends SequentialAttributeEncoder
             
             
             
-            if (!Encoding.encodeSymbols(encoded_data, pointIds.length * num_components, num_components, symbol_encoding_options, outBuffer))
-                return false;
+            Encoding.encodeSymbols(encoded_data, pointIds.length * num_components, num_components, symbol_encoding_options, outBuffer);
         }
         else
         {
@@ -188,8 +193,6 @@ class SequentialIntegerAttributeEncoder extends SequentialAttributeEncoder
             predictionScheme.encodePredictionData(outBuffer);
         }
         
-        
-        return true;
     }
     
     private IntSpan getPortableAttributeData()
@@ -217,7 +220,7 @@ class SequentialIntegerAttributeEncoder extends SequentialAttributeEncoder
      *  Prepares the integer values that are going to be encoded.
      *
      */
-    protected boolean prepareValues(int[] pointIds, int numPoints)
+    protected void prepareValues(int[] pointIds, int numPoints)
     {
         PointAttribute attrib = this.getAttribute();
         int numComponents = attrib.getComponentsCount();
@@ -236,7 +239,6 @@ class SequentialIntegerAttributeEncoder extends SequentialAttributeEncoder
             dstIndex += numComponents;
         }
         
-        return true;
     }
     
     private void preparePortableAttribute(int num_entries, int num_components, int num_points)

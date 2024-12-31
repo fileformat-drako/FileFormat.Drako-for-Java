@@ -5,12 +5,11 @@ abstract class AttributeTransform
     // 
     public abstract void copyToAttributeTransformData(AttributeTransformData outData);
     
-    public boolean transferToAttribute(PointAttribute attribute)
+    public void transferToAttribute(PointAttribute attribute)
     {
         AttributeTransformData transform_data = new AttributeTransformData();
         this.copyToAttributeTransformData(transform_data);
         attribute.setAttributeTransformData(transform_data);
-        return true;
     }
     
     protected PointAttribute initPortableAttribute(int num_entries, int num_components, int num_points, PointAttribute attribute, boolean is_unsigned)

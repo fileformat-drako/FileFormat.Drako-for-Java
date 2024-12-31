@@ -10,7 +10,7 @@ class MeshPredictionSchemeTexCoordsPortableDecoder extends MeshPredictionScheme
     }
     
     @Override
-    public boolean computeCorrectionValues(IntSpan in_data, IntSpan out_corr, int size, int num_components, int[] entry_to_point_id_map)
+    public void computeCorrectionValues(IntSpan in_data, IntSpan out_corr, int size, int num_components, int[] entry_to_point_id_map)
     {
         predictor_.entry_to_point_id_map_ = entry_to_point_id_map;
         this.transform_.initializeEncoding(in_data, num_components);
@@ -24,12 +24,10 @@ class MeshPredictionSchemeTexCoordsPortableDecoder extends MeshPredictionScheme
             this.transform_.computeCorrection(in_data, dst_offset, IntSpan.wrap(predictor_.predicted_value_), 0, out_corr, dst_offset, 0);
         }
         
-        
-        return true;
     }
     
     @Override
-    public boolean encodePredictionData(EncoderBuffer buffer)
+    public void encodePredictionData(EncoderBuffer buffer)
     {
         int num_orientations = predictor_.num_orientations();
         buffer.encode2(num_orientations);
@@ -45,24 +43,25 @@ class MeshPredictionSchemeTexCoordsPortableDecoder extends MeshPredictionScheme
         
         
         encoder.endEncoding(buffer);
-        return super.encodePredictionData(buffer);
+        super.encodePredictionData(buffer);
     }
     
     @Override
-    public boolean setParentAttribute(PointAttribute att)
+    public void setParentAttribute(PointAttribute att)
+        throws DrakoException
     {
         if (att == null || (att.getAttributeType() != AttributeType.POSITION))
-            return DracoUtils.failed();
+            throw DracoUtils.failed();
         // Invalid attribute type.
         if (att.getComponentsCount() != 3)
-            return DracoUtils.failed();
+            throw DracoUtils.failed();
         // Currently works only for 3 component positions.
         predictor_.pos_attribute_ = att;
-        return true;
     }
     
     @Override
-    public boolean computeOriginalValues(IntSpan inCorr, IntSpan outData, int size, int numComponents, int[] entryToPointIdMap)
+    public void computeOriginalValues(IntSpan inCorr, IntSpan outData, int size, int numComponents, int[] entryToPointIdMap)
+        throws DrakoException
     {
         predictor_.entry_to_point_id_map_ = entryToPointIdMap;
         this.transform_.initializeDecoding(numComponents);
@@ -71,28 +70,24 @@ class MeshPredictionSchemeTexCoordsPortableDecoder extends MeshPredictionScheme
         {
             int corner_id = this.meshData.dataToCornerMap.get(p);
             if (!predictor_.computePredictedValue(false, corner_id, outData, p))
-                return DracoUtils.failed();
+                throw DracoUtils.failed();
             int dst_offset = p * numComponents;
             this.transform_.computeOriginalValue(IntSpan.wrap(predictor_.predicted_value_), 0, inCorr, dst_offset, outData, dst_offset);
         }
         
-        return true;
     }
     
     @Override
-    public boolean decodePredictionData(DecoderBuffer buffer)
+    public void decodePredictionData(DecoderBuffer buffer)
+        throws DrakoException
     {
-        int num_orientations = 0;
-        final int[] ref0 = new int[1];
-        final boolean tmp1 = !buffer.decode6(ref0);
-        num_orientations = ref0[0];
-        if (tmp1 || (num_orientations < 0))
-            return DracoUtils.failed();
+        int num_orientations = buffer.decodeI32();
+        if (num_orientations < 0)
+            throw DracoUtils.failed();
         predictor_.resizeOrientations(num_orientations);
         boolean last_orientation = true;
         RAnsBitDecoder decoder = new RAnsBitDecoder();
-        if (!decoder.startDecoding(buffer))
-            return DracoUtils.failed();
+        decoder.startDecoding(buffer);
         for (int i = 0; i < num_orientations; ++i)
         {
             if (!decoder.decodeNextBit())
@@ -104,7 +99,7 @@ class MeshPredictionSchemeTexCoordsPortableDecoder extends MeshPredictionScheme
         }
         
         decoder.endDecoding();
-        return super.decodePredictionData(buffer);
+        super.decodePredictionData(buffer);
     }
     
     @Override

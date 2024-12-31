@@ -14,55 +14,29 @@ class RAnsBitDecoder extends RAnsBitCodec implements IBitDecoder
      *  Returns false when the data is invalid.
      *
      */
-    public boolean startDecoding(DecoderBuffer sourceBuffer)
+    public void startDecoding(DecoderBuffer sourceBuffer)
+        throws DrakoException
     {
-        final byte[] ref0 = new byte[1];
-        final int[] ref1 = new int[1];
-        final int[] ref2 = new int[1];
         this.clear();
         
-        if (!sourceBuffer.decode3(ref0))
-        {
-            probZero = ref0[0];
-            return DracoUtils.failed();
-        }
-        else
-        {
-            probZero = ref0[0];
-        }
-        
+        this.probZero = sourceBuffer.decodeU8();
         int sizeInBytes;
         if (sourceBuffer.getBitstreamVersion() < 22)
         {
-            if (!sourceBuffer.decode5(ref1))
-            {
-                sizeInBytes = ref1[0];
-                return DracoUtils.failed();
-            }
-            else
-            {
-                sizeInBytes = ref1[0];
-            }
-            
-        }
-        else if (!Decoding.decodeVarint(ref2, sourceBuffer))
-        {
-            sizeInBytes = ref2[0];
-            return DracoUtils.failed();
+            sizeInBytes = sourceBuffer.decodeU32();
         }
         else
         {
-            sizeInBytes = ref2[0];
+            sizeInBytes = Decoding.decodeVarintU32(sourceBuffer);
         }
         
         
         if ((0xffffffffl & sizeInBytes) > sourceBuffer.getRemainingSize())
-            return DracoUtils.failed();
+            throw DracoUtils.failed();
         
         if (this.aNSReadInit(BytePointer.add(sourceBuffer.getPointer(), sourceBuffer.getDecodedSize()), sizeInBytes) != 0)
-            return DracoUtils.failed();
+            throw DracoUtils.failed();
         sourceBuffer.advance(sizeInBytes);
-        return true;
     }
     
     private int aNSReadInit(BytePointer buf, int offset)

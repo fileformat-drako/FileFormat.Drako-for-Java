@@ -140,12 +140,13 @@ class Encoding
         return table_bits + data_bits;
     }
     
-    public static boolean encodeSymbols(IntSpan symbols, int numValues, int numComponents, DracoEncodeOptions options, EncoderBuffer targetBuffer)
+    public static void encodeSymbols(IntSpan symbols, int numValues, int numComponents, DracoEncodeOptions options, EncoderBuffer targetBuffer)
+        throws DrakoException
     {
         final int[] ref2 = new int[1];
         final int[] ref3 = new int[1];
         if (symbols.size() == 0)
-            return true;
+            return;
         if (numComponents == 0)
         {
             numComponents = 1;
@@ -177,13 +178,15 @@ class Encoding
         // Use the tagged scheme.
         targetBuffer.encode((byte)method);
         if (method == TAGGED)
-            return Encoding.encodeTaggedSymbols(symbols, numComponents, bitLengths, targetBuffer);
-        
-        if (method == RAW)
-            return Encoding.encodeRawSymbols(symbols, numValues, maxValue, num_unique_symbols, options, targetBuffer);
-        
-        // Unknown method selected.
-        return false;
+        {
+            Encoding.encodeTaggedSymbols(symbols, numComponents, bitLengths, targetBuffer);
+        }
+        else if (method == RAW)
+        {
+            Encoding.encodeRawSymbols(symbols, numValues, maxValue, num_unique_symbols, options, targetBuffer);
+        }
+        else
+            throw DracoUtils.failed();
     }
     
     static boolean encodeTaggedSymbols(IntSpan symbols, int numComponents, int[] bitLengths, EncoderBuffer targetBuffer)

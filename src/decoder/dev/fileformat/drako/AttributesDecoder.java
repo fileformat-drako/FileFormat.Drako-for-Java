@@ -15,56 +15,29 @@ abstract class AttributesDecoder
     private IntList point_attribute_to_local_id_map_;
     private PointCloudDecoder pointCloudDecoder;
     private DracoPointCloud pointCloud;
-    public boolean initialize(PointCloudDecoder decoder, DracoPointCloud pointCloud)
+    public void initialize(PointCloudDecoder decoder, DracoPointCloud pointCloud)
     {
         this.pointCloud = pointCloud;
         this.pointCloudDecoder = decoder;
-        return true;
     }
     
-    public boolean decodeAttributesDecoderData(DecoderBuffer inBuffer)
+    public void decodeAttributesDecoderData(DecoderBuffer inBuffer)
+        throws DrakoException
     {
         int numAttributes;
-        final int[] ref0 = new int[1];
-        final int[] ref1 = new int[1];
-        final byte[] ref2 = new byte[1];
-        final byte[] ref3 = new byte[1];
-        final byte[] ref4 = new byte[1];
-        final byte[] ref5 = new byte[1];
-        final short[] ref6 = new short[1];
-        final short[] ref7 = new short[1];
         if (pointCloudDecoder.getBitstreamVersion() < 20)
         {
-            if (!inBuffer.decode6(ref0))
-            {
-                numAttributes = ref0[0];
-                return DracoUtils.failed();
-            }
-            else
-            {
-                numAttributes = ref0[0];
-            }
-            
+            numAttributes = inBuffer.decodeI32();
         }
         else
         {
-            int n;
-            if (!Decoding.decodeVarint(ref1, inBuffer))
-            {
-                n = ref1[0];
-                return DracoUtils.failed();
-            }
-            else
-            {
-                n = ref1[0];
-            }
-            
+            int n = Decoding.decodeVarintU32(inBuffer);
             numAttributes = n;
         }
         
         
         if (numAttributes <= 0)
-            return DracoUtils.failed();
+            throw DracoUtils.failed();
         
         this.pointAttributeIds = new int[numAttributes];
         DracoPointCloud pc = pointCloud;
@@ -75,46 +48,10 @@ abstract class AttributesDecoder
             byte dataType;
             byte componentsCount;
             byte normalized;
-            if (!inBuffer.decode3(ref2))
-            {
-                attType = ref2[0];
-                return DracoUtils.failed();
-            }
-            else
-            {
-                attType = ref2[0];
-            }
-            
-            if (!inBuffer.decode3(ref3))
-            {
-                dataType = ref3[0];
-                return DracoUtils.failed();
-            }
-            else
-            {
-                dataType = ref3[0];
-            }
-            
-            if (!inBuffer.decode3(ref4))
-            {
-                componentsCount = ref4[0];
-                return DracoUtils.failed();
-            }
-            else
-            {
-                componentsCount = ref4[0];
-            }
-            
-            if (!inBuffer.decode3(ref5))
-            {
-                normalized = ref5[0];
-                return DracoUtils.failed();
-            }
-            else
-            {
-                normalized = ref5[0];
-            }
-            
+            attType = inBuffer.decodeU8();
+            dataType = inBuffer.decodeU8();
+            componentsCount = inBuffer.decodeU8();
+            normalized = inBuffer.decodeU8();
             int dracoDt = (int)(0xff & dataType);
             PointAttribute ga = new PointAttribute();
             ga.setAttributeType((int)(0xff & attType));
@@ -125,26 +62,15 @@ abstract class AttributesDecoder
             short customId;
             if (version < 13)
             {
-                if (!inBuffer.decode(ref6))
-                {
-                    customId = ref6[0];
-                    return DracoUtils.failed();
-                }
-                else
-                {
-                    customId = ref6[0];
-                }
-                
+                customId = inBuffer.decodeU16();
             }
             else
             {
-                Decoding.decodeVarint(ref7, inBuffer);
-                customId = ref7[0];
+                customId = Decoding.decodeVarintU16(inBuffer);
             }
             
-            
-            ga.setUniqueId(customId);
             int attId = pc.addAttribute(ga);
+            ga.setUniqueId(customId);
             pointAttributeIds[i] = attId;
             
             // Update the inverse map.
@@ -156,31 +82,27 @@ abstract class AttributesDecoder
             point_attribute_to_local_id_map_.set(attId, i);
         }
         
-        
-        return true;
     }
     
-    public boolean decodeAttributes(DecoderBuffer buffer)
+    public void decodeAttributes(DecoderBuffer buffer)
+        throws DrakoException
     {
-        if (!this.decodePortableAttributes(buffer))
-            return DracoUtils.failed();
-        if (!this.decodeDataNeededByPortableTransforms(buffer))
-            return DracoUtils.failed();
-        if (!this.transformAttributesToOriginalFormat())
-            return DracoUtils.failed();
-        return true;
+        this.decodePortableAttributes(buffer);
+        this.decodeDataNeededByPortableTransforms(buffer);
+        this.transformAttributesToOriginalFormat();
     }
     
-    protected abstract boolean decodePortableAttributes(DecoderBuffer buffer);
+    protected abstract void decodePortableAttributes(DecoderBuffer buffer)
+        throws DrakoException;
     
-    protected boolean decodeDataNeededByPortableTransforms(DecoderBuffer buffer)
+    protected void decodeDataNeededByPortableTransforms(DecoderBuffer buffer)
+        throws DrakoException
     {
-        return true;
     }
     
-    protected boolean transformAttributesToOriginalFormat()
+    protected void transformAttributesToOriginalFormat()
+        throws DrakoException
     {
-        return true;
     }
     
     public int getAttributeId(int i)

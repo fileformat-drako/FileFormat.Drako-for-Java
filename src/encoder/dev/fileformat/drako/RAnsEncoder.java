@@ -69,7 +69,7 @@ class RAnsEncoder extends RAnsBitCodec
     public void write(RAnsBitCodec.RansSym sym)
     {
         int p = sym.prob;
-        while (this.state >= (lRansBase / ransPrecision * IO_BASE * p))
+        while ((0xffffffffl & this.state) >= (lRansBase / ransPrecision * IO_BASE * p))
         {
             buf.set(bufOffset++, (byte)(this.state % IO_BASE));
             state /= IO_BASE;

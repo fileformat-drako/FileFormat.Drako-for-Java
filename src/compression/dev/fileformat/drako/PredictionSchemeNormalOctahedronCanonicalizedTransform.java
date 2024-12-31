@@ -17,41 +17,18 @@ class PredictionSchemeNormalOctahedronCanonicalizedTransform extends PredictionS
     }
     
     @Override
-    public boolean decodeTransformData(DecoderBuffer buffer)
+    public void decodeTransformData(DecoderBuffer buffer)
+        throws DrakoException
     {
-        int max_quantized_value;
-        int center_value;
-        final int[] ref0 = new int[1];
-        final int[] ref1 = new int[1];
-        if (!buffer.decode6(ref0))
-        {
-            max_quantized_value = ref0[0];
-            return false;
-        }
-        else
-        {
-            max_quantized_value = ref0[0];
-        }
+        int max_quantized_value = buffer.decodeI32();
+        int center_value = buffer.decodeI32();
         
-        if (!buffer.decode6(ref1))
-        {
-            center_value = ref1[0];
-            return false;
-        }
-        else
-        {
-            center_value = ref1[0];
-        }
-        
-        
-        if (!this.setMaxQuantizedValue(max_quantized_value))
-            return false;
+        this.setMaxQuantizedValue(max_quantized_value);
         // Account for reading wrong values, e.g., due to fuzzing.
         if (this.getQuantizationBits() < 2)
-            return false;
+            throw DracoUtils.failed();
         if (this.getQuantizationBits() > 30)
-            return false;
-        return true;
+            throw DracoUtils.failed();
     }
     
     @Override
@@ -106,11 +83,10 @@ class PredictionSchemeNormalOctahedronCanonicalizedTransform extends PredictionS
     }
     
     @Override
-    public boolean encodeTransformData(EncoderBuffer buffer)
+    public void encodeTransformData(EncoderBuffer buffer)
     {
         buffer.encode2(this.octahedronToolBox.getMaxQuantizedValue());
         buffer.encode2(this.octahedronToolBox.getCenterValue());
-        return true;
     }
     
     @Override

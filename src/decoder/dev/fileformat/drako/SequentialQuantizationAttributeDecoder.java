@@ -12,74 +12,64 @@ class SequentialQuantizationAttributeDecoder extends SequentialIntegerAttributeD
     private float[] minValue;
     private float maxValueDif;
     @Override
-    public boolean initialize(PointCloudDecoder decoder, int attributeId)
+    public void initialize(PointCloudDecoder decoder, int attributeId)
+        throws DrakoException
     {
-        if (!super.initialize(decoder, attributeId))
-            return DracoUtils.failed();
+        super.initialize(decoder, attributeId);
         PointAttribute attribute = decoder.getPointCloud().attribute(attributeId);
         // Currently we can quantize only floating point arguments.
         if (attribute.getDataType() != DataType.FLOAT32)
-            return DracoUtils.failed();
-        return true;
+            throw DracoUtils.failed();
     }
     
     @Override
-    public boolean decodeIntegerValues(int[] pointIds, DecoderBuffer inBuffer)
+    public void decodeIntegerValues(int[] pointIds, DecoderBuffer inBuffer)
+        throws DrakoException
     {
-        if (this.getDecoder().getBitstreamVersion() < 20 && !this.decodeQuantizedDataInfo())
-            return DracoUtils.failed();
-        return super.decodeIntegerValues(pointIds, inBuffer);
+        if (this.getDecoder().getBitstreamVersion() < 20)
+        {
+            this.decodeQuantizedDataInfo();
+        }
+        
+        super.decodeIntegerValues(pointIds, inBuffer);
     }
     
     @Override
-    protected boolean storeValues(int numValues)
+    protected void storeValues(int numValues)
     {
-        return this.dequantizeValues(numValues);
+        this.dequantizeValues(numValues);
     }
     
     @Override
-    public boolean decodeDataNeededByPortableTransform(int[] pointIds, DecoderBuffer in_buffer)
+    public void decodeDataNeededByPortableTransform(int[] pointIds, DecoderBuffer in_buffer)
+        throws DrakoException
     {
         if (this.getDecoder().getBitstreamVersion() >= 20)
         {
             // Decode quantization data here only for files with bitstream version 2.0+
-            if (!this.decodeQuantizedDataInfo())
-                return DracoUtils.failed();
+            this.decodeQuantizedDataInfo();
         }
         
         AttributeQuantizationTransform transform = new AttributeQuantizationTransform();
         transform.setParameters(quantizationBits, minValue, this.attribute.getComponentsCount(), maxValueDif);
-        return transform.transferToAttribute(this.getPortableAttribute());
+        transform.transferToAttribute(this.getPortableAttribute());
     }
     
-    private boolean decodeQuantizedDataInfo()
+    private void decodeQuantizedDataInfo()
+        throws DrakoException
     {
         int numComponents = this.getAttribute().getComponentsCount();
-        final float[] ref0 = new float[1];
-        final byte[] ref1 = new byte[1];
         this.minValue = new float[numComponents];
         if (!this.getDecoder().getBuffer().decode(minValue))
-            return DracoUtils.failed();
-        if (!this.getDecoder().getBuffer().decode4(ref0))
-        {
-            maxValueDif = ref0[0];
-            return DracoUtils.failed();
-        }
-        else
-        {
-            maxValueDif = ref0[0];
-        }
-        
-        byte quantizationBits;
-        final boolean tmp2 = !this.getDecoder().getBuffer().decode3(ref1);
-        quantizationBits = ref1[0];
-        if (tmp2 || ((0xff & quantizationBits) > 31))
-            return DracoUtils.failed();
+            throw DracoUtils.failed();
+        this.maxValueDif = this.decoder.getBuffer().decodeF32();
+        byte quantizationBits = this.getDecoder().getBuffer().decodeU8();
+        if ((0xff & quantizationBits) > 31)
+            throw DracoUtils.failed();
         this.quantizationBits = 0xff & quantizationBits;
-        return true;
     }
     
-    private boolean dequantizeValues(int numValues)
+    private void dequantizeValues(int numValues)
     {
         int maxQuantizedValue = (1 << quantizationBits) - 1;
         int numComponents = this.getAttribute().getComponentsCount();
@@ -103,7 +93,6 @@ class SequentialQuantizationAttributeDecoder extends SequentialIntegerAttributeD
             outBytePos += entrySize;
         }
         
-        return true;
     }
     
     

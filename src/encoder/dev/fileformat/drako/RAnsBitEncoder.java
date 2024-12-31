@@ -44,7 +44,7 @@ class RAnsBitEncoder extends RAnsBitCodec implements IBitEncoder
             this.state = src.state;
         }
         
-        static final long serialVersionUID = 1088151661L;
+        static final long serialVersionUID = 1988767698L;
         @Override
         public int hashCode()
         {
@@ -221,7 +221,7 @@ class RAnsBitEncoder extends RAnsBitCodec implements IBitEncoder
         int lS = val == 1 ? p : 0xff & p0;
         int quot;
         int rem;
-        if (ans.state >= (L_BASE / ANSP8_PRECISION * IO_BASE * lS))
+        if ((0xffffffffl & ans.state) >= (L_BASE / ANSP8_PRECISION * IO_BASE * lS))
         {
             ans.buf[ans.bufOffset++] = (byte)(ans.state % IO_BASE);
             ans.state /= IO_BASE;

@@ -28,79 +28,43 @@ class MeshEdgeBreakerTraversalValenceDecoder extends MeshEdgeBreakerTraversalDec
     }
     
     @Override
-    public boolean start(DecoderBuffer[] outBuffer)
+    public DecoderBuffer start()
+        throws DrakoException
     {
-        final int[] ref0 = new int[1];
-        final int[] ref1 = new int[1];
-        final byte[] ref2 = new byte[1];
-        final int[] ref3 = new int[1];
-        outBuffer[0] = null;
+        DecoderBuffer outBuffer = null;
         if (this.getBitstreamVersion() < 22)
         {
-            if (!super.decodeTraversalSymbols())
-                return DracoUtils.failed();
+            super.decodeTraversalSymbols();
         }
         
         
-        if (!super.decodeStartFaces())
-            return DracoUtils.failed();
-        if (!super.decodeAttributeSeams())
-            return DracoUtils.failed();
-        outBuffer[0] = this.buffer.clone();
+        super.decodeStartFaces();
+        super.decodeAttributeSeams();
+        outBuffer = this.buffer.clone();
         
         if (this.getBitstreamVersion() < 22)
         {
             int numSplitSymbols;
             if (this.getBitstreamVersion() < 20)
             {
-                if (!outBuffer[0].decode6(ref0))
-                {
-                    numSplitSymbols = ref0[0];
-                    return DracoUtils.failed();
-                }
-                else
-                {
-                    numSplitSymbols = ref0[0];
-                }
-                
+                numSplitSymbols = outBuffer.decodeI32();
             }
             else
             {
-                int tmp;
-                if (!Decoding.decodeVarint(ref1, outBuffer[0]))
-                {
-                    tmp = ref1[0];
-                    return DracoUtils.failed();
-                }
-                else
-                {
-                    tmp = ref1[0];
-                }
-                
-                numSplitSymbols = tmp;
+                numSplitSymbols = Decoding.decodeVarintU32(outBuffer);
             }
             
             
             if (numSplitSymbols >= numVertices)
-                return DracoUtils.failed();
-            byte mode;
-            if (!outBuffer[0].decode3(ref2))
-            {
-                mode = ref2[0];
-                return DracoUtils.failed();
-            }
-            else
-            {
-                mode = ref2[0];
-            }
-            
+                throw DracoUtils.failed();
+            byte mode = outBuffer.decodeU8();
             if (mode == 0)// Edgebreaker valence mode 2-7
             {
                 this.minValence = 2;
                 this.maxValence = 7;
             }
             else
-                return DracoUtils.failed();
+                throw DracoUtils.failed();
         }
         else
         {
@@ -110,7 +74,7 @@ class MeshEdgeBreakerTraversalValenceDecoder extends MeshEdgeBreakerTraversalDec
         
         
         if (numVertices < 0)
-            return DracoUtils.failed();
+            throw DracoUtils.failed();
         // Set the valences of all initial vertices to 0.
         this.vertexValences = new int[numVertices];
         int numUniqueValences = maxValence - minValence + 1;
@@ -120,14 +84,12 @@ class MeshEdgeBreakerTraversalValenceDecoder extends MeshEdgeBreakerTraversalDec
         this.contextCounters = new int[contextSymbols.length];
         for (int i = 0; i < contextSymbols.length; ++i)
         {
-            int numSymbols;
-            Decoding.decodeVarint(ref3, outBuffer[0]);
-            numSymbols = ref3[0];
+            int numSymbols = Decoding.decodeVarintU32(outBuffer);
             if ((0xffffffffl & numSymbols) > 0)
             {
                 
                 contextSymbols[i] = new int[numSymbols];
-                Decoding.decodeSymbols(numSymbols, 1, outBuffer[0], IntSpan.wrap(contextSymbols[i]));
+                Decoding.decodeSymbols(numSymbols, 1, outBuffer, IntSpan.wrap(contextSymbols[i]));
                 // All symbols are going to be processed from the back.
                 contextCounters[i] = numSymbols;
             }
@@ -135,7 +97,7 @@ class MeshEdgeBreakerTraversalValenceDecoder extends MeshEdgeBreakerTraversalDec
         }
         
         
-        return true;
+        return outBuffer;
     }
     
     @Override

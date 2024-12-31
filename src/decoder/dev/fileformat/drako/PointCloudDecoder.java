@@ -37,45 +37,41 @@ abstract class PointCloudDecoder
         return geometryType;
     }
     
-    public boolean decode(DracoHeader header, DecoderBuffer buffer, DracoPointCloud result, boolean decodeData)
+    public void decode(DracoHeader header, DecoderBuffer buffer, DracoPointCloud result, boolean decodeData)
+        throws DrakoException
     {
         this.buffer = buffer;
         this.pointCloud = result;
         this.setBitstreamVersion(header.version);
-        if (header.version >= 13 && ((header.flags & (short)DracoHeader.METADATA_FLAG_MASK) == DracoHeader.METADATA_FLAG_MASK))
+        if (header.version >= 13 && ((0xffff & header.flags & (short)DracoHeader.METADATA_FLAG_MASK) == DracoHeader.METADATA_FLAG_MASK))
         {
-            if (!this.decodeMetadata())
-                return DracoUtils.failed();
+            this.decodeMetadata();
         }
         
-        if (!this.initializeDecoder())
-            return DracoUtils.failed();
-        if (!this.decodeGeometryData())
-            return DracoUtils.failed();
-        if (!this.decodePointAttributes(decodeData))
-            return DracoUtils.failed();
-        return true;
+        this.initializeDecoder();
+        this.decodeGeometryData();
+        this.decodePointAttributes(decodeData);
     }
     
-    private boolean decodeMetadata()
+    private void decodeMetadata()
+        throws DrakoException
     {
         MetadataDecoder decoder = new MetadataDecoder();
         GeometryMetadata metadata = decoder.decode(buffer);
         pointCloud.getMetadatas().add(metadata);
-        return true;
     }
     
-    public boolean setAttributesDecoder(int attDecoderId, AttributesDecoder decoder)
+    public void setAttributesDecoder(int attDecoderId, AttributesDecoder decoder)
+        throws DrakoException
     {
         if (attDecoderId < 0)
-            return false;
+            throw DracoUtils.failed();
         if (attDecoderId >= attributesDecoders.length)
         {
             attributesDecoders = attributesDecoders == null ? new AttributesDecoder[attDecoderId + 1] : Arrays.copyOf(attributesDecoders, attDecoderId + 1);
         }
         
         attributesDecoders[attDecoderId] = decoder;
-        return true;
     }
     
     public AttributesDecoder[] getAttributesDecoders()
@@ -83,49 +79,36 @@ abstract class PointCloudDecoder
         return attributesDecoders;
     }
     
-    protected boolean initializeDecoder()
+    protected void initializeDecoder()
+        throws DrakoException
     {
-        return true;
     }
     
-    protected boolean decodeGeometryData()
+    protected void decodeGeometryData()
+        throws DrakoException
     {
-        return true;
     }
     
-    protected boolean decodePointAttributes(boolean decodeAttributeData)
+    protected void decodePointAttributes(boolean decodeAttributeData)
+        throws DrakoException
     {
-        byte numAttributesDecoders = 0;
-        final byte[] ref0 = new byte[1];
-        if (!buffer.decode3(ref0))
-        {
-            numAttributesDecoders = ref0[0];
-            return DracoUtils.failed();
-        }
-        else
-        {
-            numAttributesDecoders = ref0[0];
-        }
-        
+        byte numAttributesDecoders = buffer.decodeU8();
         //create attributes decoders
         for (int i = 0; i < (0xff & numAttributesDecoders); i++)
         {
-            if (!this.createAttributesDecoder(i))
-                return DracoUtils.failed();
+            this.createAttributesDecoder(i);
         }
         
         //initialize all decoders
         for (AttributesDecoder dec : attributesDecoders)
         {
-            if (!dec.initialize(this, pointCloud))
-                return DracoUtils.failed();
+            dec.initialize(this, pointCloud);
         }
         
         //decode data
         for (AttributesDecoder dec : attributesDecoders)
         {
-            if (!dec.decodeAttributesDecoderData(buffer))
-                return DracoUtils.failed();
+            dec.decodeAttributesDecoderData(buffer);
         }
         
         int maxAttrId = -1;
@@ -157,31 +140,27 @@ abstract class PointCloudDecoder
         //decode attributes
         if (decodeAttributeData)
         {
-            if (!this.decodeAllAttributes())
-                return DracoUtils.failed();
+            this.decodeAllAttributes();
         }
         
-        if (!this.onAttributesDecoded())
-            return DracoUtils.failed();
-        return true;
+        this.onAttributesDecoded();
     }
     
-    protected abstract boolean createAttributesDecoder(int attrDecoderId);
+    protected abstract void createAttributesDecoder(int attrDecoderId)
+        throws DrakoException;
     
-    protected boolean onAttributesDecoded()
+    protected void onAttributesDecoded()
     {
-        return true;
     }
     
-    protected boolean decodeAllAttributes()
+    protected void decodeAllAttributes()
+        throws DrakoException
     {
         for (AttributesDecoder dec : attributesDecoders)
         {
-            if (!dec.decodeAttributes(buffer))
-                return DracoUtils.failed();
+            dec.decodeAttributes(buffer);
         }
         
-        return true;
     }
     
     public DecoderBuffer getBuffer()

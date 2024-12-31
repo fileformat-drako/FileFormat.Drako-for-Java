@@ -66,7 +66,10 @@ abstract class IntSpan extends Span {
         return new ArraySpan(array, 0, array.length);
     }
     public static IntSpan wrap(int[] array, int offset, int length) {
-        return new ArraySpan(array, offset, array.length);
+        return new ArraySpan(array, offset, length);
+    }
+    public static IntSpan wrap(int[] array, int offset) {
+        return new ArraySpan(array, offset, array.length - offset);
     }
     public static IntSpan wrap(byte[] array) {
         return new BytesSpan(array, 0, array.length / 4);

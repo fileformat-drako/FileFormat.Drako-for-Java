@@ -33,7 +33,8 @@ class MeshTraversalSequencer<TCornerTable extends ICornerTable> extends PointsSe
     }
     
     @Override
-    public boolean updatePointToAttributeIndexMapping(PointAttribute attribute)
+    public void updatePointToAttributeIndexMapping(PointAttribute attribute)
+        throws DrakoException
     {
         TCornerTable cornerTable = traverser.getCornerTable();
         attribute.setExplicitMapping(mesh.getNumPoints());
@@ -49,25 +50,24 @@ class MeshTraversalSequencer<TCornerTable extends ICornerTable> extends PointsSe
                 int vertId = cornerTable.vertex(3 * f + p);
                 int attEntryId = encodingData.vertexToEncodedAttributeValueIndexMap[vertId];
                 if (attEntryId >= numPoints)
-                    return DracoUtils.failed();
+                    throw DracoUtils.failed();
                 attribute.setPointMapEntry(pointId, attEntryId);
             }
             
         }
         
-        return true;
     }
     
     @Override
-    protected boolean generateSequenceInternal()
+    protected void generateSequenceInternal()
+        throws DrakoException
     {
         traverser.onTraversalStart();
         if (cornerOrder != null)
         {
             for (int i = 0; i < cornerOrder.getCount(); ++i)
             {
-                if (!this.processCorner(cornerOrder.get(i)))
-                    return false;
+                this.processCorner(cornerOrder.get(i));
             }
             
         }
@@ -76,19 +76,18 @@ class MeshTraversalSequencer<TCornerTable extends ICornerTable> extends PointsSe
             int num_faces = traverser.getCornerTable().getNumFaces();
             for (int i = 0; i < num_faces; ++i)
             {
-                if (!this.processCorner(3 * i))
-                    return false;
+                this.processCorner(3 * i);
             }
             
         }
         
         traverser.onTraversalEnd();
-        return true;
     }
     
-    private boolean processCorner(int cornerId)
+    private void processCorner(int cornerId)
+        throws DrakoException
     {
-        return traverser.traverseFromCorner(cornerId);
+        traverser.traverseFromCorner(cornerId);
     }
     
 }

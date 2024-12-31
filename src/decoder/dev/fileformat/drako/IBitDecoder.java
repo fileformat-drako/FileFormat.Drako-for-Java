@@ -6,7 +6,8 @@ interface IBitDecoder
      *  Returns false when the data is invalid.
      *
      */
-    boolean startDecoding(DecoderBuffer sourceBuffer);
+    void startDecoding(DecoderBuffer sourceBuffer)
+        throws DrakoException;
     
     int decodeLeastSignificantBits32(int nbits);
     

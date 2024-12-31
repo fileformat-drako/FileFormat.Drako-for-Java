@@ -173,41 +173,20 @@ class PredictionSchemeWrapTransform extends PredictionSchemeTransform
     }
     
     @Override
-    public boolean encodeTransformData(EncoderBuffer buffer)
+    public void encodeTransformData(EncoderBuffer buffer)
     {
         // Store the input value range as it is needed by the decoder.
         buffer.encode2(minValue);
         buffer.encode2(maxValue);
-        return true;
     }
     
     @Override
-    public boolean decodeTransformData(DecoderBuffer buffer)
+    public void decodeTransformData(DecoderBuffer buffer)
+        throws DrakoException
     {
-        final int[] ref1 = new int[1];
-        final int[] ref2 = new int[1];
-        if (!buffer.decode6(ref1))
-        {
-            minValue = ref1[0];
-            return false;
-        }
-        else
-        {
-            minValue = ref1[0];
-        }
-        
-        if (!buffer.decode6(ref2))
-        {
-            maxValue = ref2[0];
-            return false;
-        }
-        else
-        {
-            maxValue = ref2[0];
-        }
-        
+        this.minValue = buffer.decodeI32();
+        this.maxValue = buffer.decodeI32();
         this.initCorrectionBounds();
-        return true;
     }
     
     public PredictionSchemeWrapTransform()

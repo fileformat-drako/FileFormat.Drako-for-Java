@@ -46,10 +46,10 @@ class PredictionDegreeTraverser extends TraverserBase<CornerTable>
     }
     
     @Override
-    public boolean traverseFromCorner(int corner_id)
+    public void traverseFromCorner(int corner_id)
     {
         if (prediction_degree_.length == 0)
-            return true;
+            return;
         
         // Traversal starts from the |corner_id|. It's going to follow either the
         // right or the left neighboring faces to |corner_id| based on their
@@ -150,8 +150,6 @@ class PredictionDegreeTraverser extends TraverserBase<CornerTable>
             
         }
         
-        
-        return true;
     }
     
     // Retrieves the next available corner (edge) to traverse. Edges are processed

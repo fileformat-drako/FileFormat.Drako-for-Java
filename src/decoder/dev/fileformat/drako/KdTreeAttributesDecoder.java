@@ -7,22 +7,12 @@ class KdTreeAttributesDecoder extends AttributesDecoder
     private IntList min_signed_values_;
     private ArrayList<PointAttribute> quantized_portable_attributes_;
     @Override
-    protected boolean decodePortableAttributes(DecoderBuffer buffer)
+    protected void decodePortableAttributes(DecoderBuffer buffer)
+        throws DrakoException
     {
-        final byte[] ref0 = new byte[1];
         if (buffer.getBitstreamVersion() < 23)
-            return true;
-        byte compression_level = 0;
-        if (!buffer.decode3(ref0))
-        {
-            compression_level = ref0[0];
-            return false;
-        }
-        else
-        {
-            compression_level = ref0[0];
-        }
-        
+            return;
+        byte compression_level = buffer.decodeU8();
         int num_points = this.getDecoder().getPointCloud().getNumPoints();
         int num_attributes = this.getNumAttributes();
         int total_dimensionality = 0;// position is a required dimension
@@ -64,7 +54,7 @@ class KdTreeAttributesDecoder extends AttributesDecoder
                 target_att = port_att;
             }
             else
-                return false;
+                throw DracoUtils.failed();
             int data_type = target_att.getDataType();
             int data_size = Math.max(0, DracoUtils.dataTypeLength(data_type));
             int num_components = target_att.getComponentsCount();
@@ -74,17 +64,13 @@ class KdTreeAttributesDecoder extends AttributesDecoder
         
         PointAttributeVectorOutputIterator out_it = new PointAttributeVectorOutputIterator(atts);
         DynamicIntegerPointsKdTreeDecoder decoder = new DynamicIntegerPointsKdTreeDecoder(0xff & compression_level, total_dimensionality);
-        if (!decoder.decodePoints(buffer, out_it))
-            return false;
-        return true;
+        decoder.decodePoints(buffer, out_it);
     }
     
     @Override
-    protected boolean decodeDataNeededByPortableTransforms(DecoderBuffer in_buffer)
+    protected void decodeDataNeededByPortableTransforms(DecoderBuffer in_buffer)
+        throws DrakoException
     {
-        final float[] ref1 = new float[1];
-        final byte[] ref2 = new byte[1];
-        final int[] ref4 = new int[1];
         if (in_buffer.getBitstreamVersion() >= 23)
         {
             float[] min_value;
@@ -97,28 +83,15 @@ class KdTreeAttributesDecoder extends AttributesDecoder
                     int num_components = att.getComponentsCount();
                     min_value = new float[num_components];
                     if (!in_buffer.decode(min_value))
-                        return false;
-                    float max_value_dif;
-                    if (!in_buffer.decode4(ref1))
-                    {
-                        max_value_dif = ref1[0];
-                        return false;
-                    }
-                    else
-                    {
-                        max_value_dif = ref1[0];
-                    }
-                    
-                    byte quantization_bits;
-                    final boolean tmp3 = !in_buffer.decode3(ref2);
-                    quantization_bits = ref2[0];
-                    if (tmp3 || ((0xff & quantization_bits) > 31))
-                        return false;
+                        throw DracoUtils.failed();
+                    float max_value_dif = in_buffer.decodeF32();
+                    byte quantization_bits = in_buffer.decodeU8();
+                    if ((0xff & quantization_bits) > 31)
+                        throw DracoUtils.failed();
                     AttributeQuantizationTransform transform = new AttributeQuantizationTransform();
                     transform.setParameters(0xff & quantization_bits, min_value, num_components, max_value_dif);
                     int num_transforms = attribute_quantization_transforms_.size();
-                    if (!transform.transferToAttribute(quantized_portable_attributes_.get(num_transforms)))
-                        return false;
+                    transform.transferToAttribute(quantized_portable_attributes_.get(num_transforms));
                     attribute_quantization_transforms_.add(transform);
                 }
                 
@@ -128,20 +101,18 @@ class KdTreeAttributesDecoder extends AttributesDecoder
             // Decode transform data for signed integer attributes.
             for (int i = 0; i < min_signed_values_.getCount(); ++i)
             {
-                int val;
-                Decoding.decodeVarint(ref4, in_buffer);
-                val = ref4[0];
+                int val = Decoding.decodeVarintU32(in_buffer);
                 min_signed_values_.set(i, val);
             }
             
             
-            return true;
+            return;
         }
         
-        return false;
+        throw DracoUtils.failed();
     }
     
-    boolean transformAttributeBackToSignedType_short(PointAttribute att, int num_processed_signed_components)
+    void transformAttributeBackToSignedType_short(PointAttribute att, int num_processed_signed_components)
     {
         short[] unsigned_val = new short[att.getComponentsCount()];
         short[] signed_val = new short[att.getComponentsCount()];
@@ -159,10 +130,9 @@ class KdTreeAttributesDecoder extends AttributesDecoder
             att.setAttributeValue(avi, signed_val);
         }
         
-        return true;
     }
     
-    boolean transformAttributeBackToSignedType_sbyte(PointAttribute att, int num_processed_signed_components)
+    void transformAttributeBackToSignedType_sbyte(PointAttribute att, int num_processed_signed_components)
     {
         byte[] unsigned_val = new byte[att.getComponentsCount()];
         byte[] signed_val = new byte[att.getComponentsCount()];
@@ -180,10 +150,9 @@ class KdTreeAttributesDecoder extends AttributesDecoder
             att.setAttributeValue(avi, signed_val, 0);
         }
         
-        return true;
     }
     
-    boolean transformAttributeBackToSignedType_int(PointAttribute att, int num_processed_signed_components)
+    void transformAttributeBackToSignedType_int(PointAttribute att, int num_processed_signed_components)
     {
         int[] unsigned_val = new int[att.getComponentsCount()];
         int[] signed_val = new int[att.getComponentsCount()];
@@ -201,15 +170,14 @@ class KdTreeAttributesDecoder extends AttributesDecoder
             att.setAttributeValue(avi, signed_val);
         }
         
-        return true;
     }
     
     @Override
-    protected boolean transformAttributesToOriginalFormat()
+    protected void transformAttributesToOriginalFormat()
     {
         
         if (quantized_portable_attributes_.isEmpty() && (min_signed_values_.getCount() == 0))
-            return true;
+            return;
         int num_processed_quantized_attributes = 0;
         int num_processed_signed_components = 0;
         // Dequantize attributes that needed it.
@@ -224,18 +192,15 @@ class KdTreeAttributesDecoder extends AttributesDecoder
                 // Values are stored as unsigned in the attribute, make them signed again.
                 if (att.getDataType() == DataType.INT32)
                 {
-                    if (!this.transformAttributeBackToSignedType_int(att, num_processed_signed_components))
-                        return false;
+                    this.transformAttributeBackToSignedType_int(att, num_processed_signed_components);
                 }
                 else if (att.getDataType() == DataType.INT16)
                 {
-                    if (!this.transformAttributeBackToSignedType_short(att, num_processed_signed_components))
-                        return false;
+                    this.transformAttributeBackToSignedType_short(att, num_processed_signed_components);
                 }
                 else if (att.getDataType() == DataType.INT8)
                 {
-                    if (!this.transformAttributeBackToSignedType_sbyte(att, num_processed_signed_components))
-                        return false;
+                    this.transformAttributeBackToSignedType_sbyte(att, num_processed_signed_components);
                 }
                 
                 num_processed_signed_components += att.getComponentsCount();
@@ -285,8 +250,6 @@ class KdTreeAttributesDecoder extends AttributesDecoder
             
         }
         
-        
-        return true;
     }
     
     @Override

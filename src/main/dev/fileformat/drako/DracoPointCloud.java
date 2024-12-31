@@ -92,7 +92,7 @@ public class DracoPointCloud
             this.p = src.p;
         }
         
-        static final long serialVersionUID = -890248761L;
+        static final long serialVersionUID = -41225692L;
         @Override
         public int hashCode()
         {
@@ -301,11 +301,11 @@ public class DracoPointCloud
      *
      * @return true if deduplication successed.
      */
-    public boolean deduplicateAttributeValues()
+    public void deduplicateAttributeValues()
     {
         
         if (numPoints == 0)
-            return DracoUtils.failed();
+            return;
         // Unexcpected attribute size.
         // Deduplicate all attributes.
         for (int i = 0; i < attributes.size(); i++)
@@ -314,7 +314,6 @@ public class DracoPointCloud
             attr.deduplicateValues();
         }
         
-        return true;
     }
     
     /**

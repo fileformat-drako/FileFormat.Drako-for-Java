@@ -39,9 +39,10 @@ abstract class PredictionScheme
     
     // Sets the required parent attribute.
     // 
-    public boolean setParentAttribute(PointAttribute att)
+    public void setParentAttribute(PointAttribute att)
+        throws DrakoException
     {
-        return false;
+        throw DracoUtils.failed();
     }
     
     public boolean areCorrectionsPositive()
@@ -56,28 +57,26 @@ abstract class PredictionScheme
     
     public abstract int getPredictionMethod();
     
-    public boolean encodePredictionData(EncoderBuffer buffer)
+    public void encodePredictionData(EncoderBuffer buffer)
     {
-        if (!transform_.encodeTransformData(buffer))
-            return false;
-        return true;
+        transform_.encodeTransformData(buffer);
     }
     
     // Method that can be used to decode any prediction scheme specific data
     // from the input buffer.
     // 
-    public boolean decodePredictionData(DecoderBuffer buffer)
+    public void decodePredictionData(DecoderBuffer buffer)
+        throws DrakoException
     {
-        if (!transform_.decodeTransformData(buffer))
-            return false;
-        return true;
+        transform_.decodeTransformData(buffer);
     }
     
-    public abstract boolean computeCorrectionValues(IntSpan in_data, IntSpan out_corr, int size, int num_components, int[] entry_to_point_id_map);
+    public abstract void computeCorrectionValues(IntSpan in_data, IntSpan out_corr, int size, int num_components, int[] entry_to_point_id_map);
     
     // Reverts changes made by the prediction scheme during encoding.
     // 
-    public abstract boolean computeOriginalValues(IntSpan in_corr, IntSpan out_data, int size, int num_components, int[] entry_to_point_id_map);
+    public abstract void computeOriginalValues(IntSpan in_corr, IntSpan out_data, int size, int num_components, int[] entry_to_point_id_map)
+        throws DrakoException;
     
     public static PredictionScheme create(int method, PointAttribute att, PredictionSchemeTransform transform)
     {
@@ -131,8 +130,14 @@ abstract class PredictionScheme
     {
         if (method == PredictionSchemeMethod.NONE)
             return null;
+        PredictionScheme ret = null;
         if (source.getGeometryType() == EncodedGeometryType.TRIANGULAR_MESH)
-            return PredictionScheme.createMeshPredictionScheme((MeshDecoder)source, method, attId, transform);
+        {
+            ret = PredictionScheme.createMeshPredictionScheme((MeshDecoder)source, method, attId, transform);
+        }
+        
+        if (ret != null)
+            return ret;
         PointAttribute att = source.getPointCloud().attribute(attId);
         return new PredictionSchemeDeltaDecoder(att, transform);
     }

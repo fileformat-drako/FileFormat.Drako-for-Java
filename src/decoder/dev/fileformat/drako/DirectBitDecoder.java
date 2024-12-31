@@ -13,36 +13,25 @@ class DirectBitDecoder implements IBitDecoder
     
     // Sets |source_buffer| as the buffer to decode bits from.
     // 
-    public boolean startDecoding(DecoderBuffer source_buffer)
+    public void startDecoding(DecoderBuffer source_buffer)
+        throws DrakoException
     {
-        final int[] ref0 = new int[1];
         
         this.clear();
-        int size_in_bytes;
-        if (!source_buffer.decode6(ref0))
-        {
-            size_in_bytes = ref0[0];
-            return false;
-        }
-        else
-        {
-            size_in_bytes = ref0[0];
-        }
-        
+        int size_in_bytes = source_buffer.decodeI32();
         
         // Check that size_in_bytes is > 0 and a multiple of 4 as the encoder always
         // encodes 32 bit elements.
         if (size_in_bytes == 0 || ((size_in_bytes & 0x3) != 0))
-            return false;
+            throw DracoUtils.failed();
         if (size_in_bytes > source_buffer.getRemainingSize())
-            return false;
+            throw DracoUtils.failed();
         int num_32bit_elements = size_in_bytes / 4;
         this.bits_ = new int[num_32bit_elements];
         if (!source_buffer.decode(bits_))
-            return false;
+            throw DracoUtils.failed();
         this.pos_ = 0;
         this.num_used_bits_ = 0;
-        return true;
     }
     
     // Decode one bit. Returns true if the bit is a 1, otherwise false.

@@ -23,21 +23,18 @@ class SequentialAttributeEncodersController extends AttributesEncoder
     }
     
     @Override
-    public boolean initialize(PointCloudEncoder encoder, DracoPointCloud pc)
+    public void initialize(PointCloudEncoder encoder, DracoPointCloud pc)
+        throws DrakoException
     {
-        if (!super.initialize(encoder, pc))
-            return false;
-        if (!this.createSequentialEncoders())
-            return false;
+        super.initialize(encoder, pc);
+        this.createSequentialEncoders();
         // Initialize all value encoders.
         for (int i = 0; i < this.getNumAttributes(); ++i)
         {
             int attId = this.getAttributeId(i);
-            if (!sequentialEncoders[i].initialize(encoder, attId))
-                return false;
+            sequentialEncoders[i].initialize(encoder, attId);
         }
         
-        return true;
     }
     
     @Override
@@ -55,17 +52,17 @@ class SequentialAttributeEncodersController extends AttributesEncoder
      *  encoder).
      *
      */
-    protected boolean createSequentialEncoders()
+    protected void createSequentialEncoders()
+        throws DrakoException
     {
         this.sequentialEncoders = new SequentialAttributeEncoder[this.getNumAttributes()];
         for (int i = 0; i < this.getNumAttributes(); ++i)
         {
             sequentialEncoders[i] = this.createSequentialEncoder(i);
             if (sequentialEncoders[i] == null)
-                return false;
+                throw DracoUtils.failed();
         }
         
-        return true;
     }
     
     /**
@@ -140,70 +137,57 @@ class SequentialAttributeEncodersController extends AttributesEncoder
     }
     
     @Override
-    public boolean encodeAttributesEncoderData(EncoderBuffer outBuffer)
+    public void encodeAttributesEncoderData(EncoderBuffer outBuffer)
     {
-        if (!super.encodeAttributesEncoderData(outBuffer))
-            return false;
+        super.encodeAttributesEncoderData(outBuffer);
         // Encode a unique id of every sequential encoder.
         for (int i = 0; i < sequentialEncoders.length; ++i)
         {
             outBuffer.encode((byte)(sequentialEncoders[i].getUniqueId()));
         }
         
-        return true;
     }
     
     @Override
-    public boolean encodeAttributes(EncoderBuffer outBuffer)
+    public void encodeAttributes(EncoderBuffer outBuffer)
+        throws DrakoException
     {
-        final int[][] ref0 = new int[1][];
-        if (sequencer == null || !sequencer.generateSequence(ref0))
-        {
-            pointIds = ref0[0];
-            return false;
-        }
-        else
-        {
-            pointIds = ref0[0];
-        }
-        
-        return super.encodeAttributes(outBuffer);
+        if (sequencer == null)
+            throw DracoUtils.failed();
+        this.pointIds = sequencer.generateSequence();
+        super.encodeAttributes(outBuffer);
     }
     
     @Override
-    protected boolean transformAttributesToPortableFormat()
+    protected void transformAttributesToPortableFormat()
     {
         for (int i = 0; i < sequentialEncoders.length; ++i)
         {
-            if (!sequentialEncoders[i].transformAttributeToPortableFormat(pointIds))
-                return false;
+            sequentialEncoders[i].transformAttributeToPortableFormat(pointIds);
         }
         
-        return true;
     }
     
     @Override
-    protected boolean encodePortableAttributes(EncoderBuffer out_buffer)
+    protected void encodePortableAttributes(EncoderBuffer out_buffer)
+        throws DrakoException
     {
         for (int i = 0; i < sequentialEncoders.length; ++i)
         {
-            if (!sequentialEncoders[i].encodePortableAttribute(pointIds, out_buffer))
-                return false;
+            sequentialEncoders[i].encodePortableAttribute(pointIds, out_buffer);
         }
         
-        return true;
     }
     
     @Override
-    protected boolean encodeDataNeededByPortableTransforms(EncoderBuffer out_buffer)
+    protected void encodeDataNeededByPortableTransforms(EncoderBuffer out_buffer)
+        throws DrakoException
     {
         for (int i = 0; i < sequentialEncoders.length; ++i)
         {
-            if (!sequentialEncoders[i].encodeDataNeededByPortableTransform(out_buffer))
-                return false;
+            sequentialEncoders[i].encodeDataNeededByPortableTransform(out_buffer);
         }
         
-        return true;
     }
     
     @Override

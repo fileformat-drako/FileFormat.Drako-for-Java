@@ -39,7 +39,7 @@ class RAnsBitCodec
             this.cumProb = src.cumProb;
         }
         
-        static final long serialVersionUID = 1693445968L;
+        static final long serialVersionUID = -154003714L;
         @Override
         public int hashCode()
         {

@@ -13,14 +13,13 @@ class LinearSequencer extends PointsSequencer
     }
     
     @Override
-    public boolean updatePointToAttributeIndexMapping(PointAttribute attribute)
+    public void updatePointToAttributeIndexMapping(PointAttribute attribute)
     {
         attribute.setIdentityMapping(true);
-        return true;
     }
     
     @Override
-    protected boolean generateSequenceInternal()
+    protected void generateSequenceInternal()
     {
         this.outPointIds.setCapacity(numPoints);
         for (int i = 0; i < numPoints; ++i)
@@ -28,7 +27,6 @@ class LinearSequencer extends PointsSequencer
             this.outPointIds.add(i);
         }
         
-        return true;
     }
     
 }

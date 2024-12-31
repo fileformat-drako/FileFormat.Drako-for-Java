@@ -67,7 +67,7 @@ public final class Vector2 implements Struct<Vector2>, Serializable
         this.y = src.y;
     }
     
-    static final long serialVersionUID = 927225500L;
+    static final long serialVersionUID = -1168816172L;
     @Override
     public int hashCode()
     {

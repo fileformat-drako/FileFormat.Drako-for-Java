@@ -36,20 +36,19 @@ class MeshPredictionSchemeTexCoords extends MeshPredictionScheme
     }
     
     @Override
-    public boolean setParentAttribute(PointAttribute att)
+    public void setParentAttribute(PointAttribute att)
     {
         if (att.getAttributeType() != AttributeType.POSITION)
-            return false;
+            throw new IllegalArgumentException();
         // Invalid attribute type.
         if (att.getComponentsCount() != 3)
-            return false;
+            throw new IllegalArgumentException();
         // Currently works only for 3 component positions.
         this.posAttribute = att;
-        return true;
     }
     
     @Override
-    public boolean computeCorrectionValues(IntSpan inData, IntSpan outCorr, int size, int numComponents, int[] entryToPointIdMap)
+    public void computeCorrectionValues(IntSpan inData, IntSpan outCorr, int size, int numComponents, int[] entryToPointIdMap)
     {
         this.numComponents = numComponents;
         this.entryToPointIdMap = entryToPointIdMap;
@@ -66,11 +65,10 @@ class MeshPredictionSchemeTexCoords extends MeshPredictionScheme
             this.transform_.computeCorrection(inData, dstOffset, predictedValueSpan, 0, outCorr, 0, dstOffset);
         }
         
-        return true;
     }
     
     @Override
-    public boolean computeOriginalValues(IntSpan inCorr, IntSpan outData, int size, int numComponents, int[] entryToPointIdMap)
+    public void computeOriginalValues(IntSpan inCorr, IntSpan outData, int size, int numComponents, int[] entryToPointIdMap)
     {
         this.numComponents = numComponents;
         this.entryToPointIdMap = entryToPointIdMap;
@@ -86,11 +84,10 @@ class MeshPredictionSchemeTexCoords extends MeshPredictionScheme
             this.transform_.computeOriginalValue(predictedValueSpan, 0, inCorr, dstOffset, outData, dstOffset);
         }
         
-        return true;
     }
     
     @Override
-    public boolean encodePredictionData(EncoderBuffer buffer)
+    public void encodePredictionData(EncoderBuffer buffer)
     {
         int numOrientations = orientations.size();
         buffer.encode2(numOrientations);
@@ -105,30 +102,19 @@ class MeshPredictionSchemeTexCoords extends MeshPredictionScheme
         }
         
         encoder.endEncoding(buffer);
-        return super.encodePredictionData(buffer);
+        super.encodePredictionData(buffer);
     }
     
     @Override
-    public boolean decodePredictionData(DecoderBuffer buffer)
+    public void decodePredictionData(DecoderBuffer buffer)
+        throws DrakoException
     {
-        int numOrientations = 0;
-        final int[] ref0 = new int[1];
-        if (!buffer.decode6(ref0))
-        {
-            numOrientations = ref0[0];
-            return false;
-        }
-        else
-        {
-            numOrientations = ref0[0];
-        }
-        
+        int numOrientations = buffer.decodeI32();
         orientations.clear();
         orientations.addAll(Convert.asList(new boolean[numOrientations]));
         boolean lastOrientation = true;
         RAnsBitDecoder decoder = new RAnsBitDecoder();
-        if (!decoder.startDecoding(buffer))
-            return false;
+        decoder.startDecoding(buffer);
         for (int i = 0; i < numOrientations; ++i)
         {
             if (!decoder.decodeNextBit())
@@ -140,7 +126,7 @@ class MeshPredictionSchemeTexCoords extends MeshPredictionScheme
         }
         
         decoder.endDecoding();
-        return super.decodePredictionData(buffer);
+        super.decodePredictionData(buffer);
     }
     
     private Vector3 getPositionForEntryId(int entryId)

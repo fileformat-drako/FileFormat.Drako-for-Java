@@ -26,10 +26,11 @@ abstract class MeshDecoder extends PointCloudDecoder
      * @param decodeData 
      */
     @Override
-    public boolean decode(DracoHeader header, DecoderBuffer inBuffer, DracoPointCloud outMesh, boolean decodeData)
+    public void decode(DracoHeader header, DecoderBuffer inBuffer, DracoPointCloud outMesh, boolean decodeData)
+        throws DrakoException
     {
         this.mesh = (DracoMesh)outMesh;
-        return super.decode(header, inBuffer, outMesh, decodeData);
+        super.decode(header, inBuffer, outMesh, decodeData);
     }
     
     /**
@@ -64,15 +65,16 @@ abstract class MeshDecoder extends PointCloudDecoder
     }
     
     @Override
-    protected boolean decodeGeometryData()
+    protected void decodeGeometryData()
+        throws DrakoException
     {
         if (mesh == null)
-            return DracoUtils.failed();
-        if (!this.decodeConnectivity())
-            return DracoUtils.failed();
-        return super.decodeGeometryData();
+            throw DracoUtils.failed();
+        this.decodeConnectivity();
+        super.decodeGeometryData();
     }
     
-    protected abstract boolean decodeConnectivity();
+    protected abstract void decodeConnectivity()
+        throws DrakoException;
     
 }

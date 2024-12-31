@@ -14,7 +14,7 @@ class MeshSequentialEncoder extends MeshEncoder
     }
     
     @Override
-    protected boolean encodeConnectivity()
+    protected void encodeConnectivity()
     {
         int numFaces = this.getMesh().getNumFaces();
         Encoding.encodeVarint(numFaces, this.getBuffer());
@@ -72,11 +72,10 @@ class MeshSequentialEncoder extends MeshEncoder
             
         }
         
-        return true;
     }
     
     @Override
-    protected boolean generateAttributesEncoder(int attId)
+    protected void generateAttributesEncoder(int attId)
     {
         // Create only one attribute encoder that is going to encode all points in a
         // linear sequence.
@@ -91,10 +90,10 @@ class MeshSequentialEncoder extends MeshEncoder
             this.attributesEncoder(0).addAttributeId(attId);
         }
         
-        return true;
     }
     
     private boolean compressAndEncodeIndices()
+        throws DrakoException
     {
         int numFaces = this.getMesh().getNumFaces();
         IntSpan indicesBuffer = IntSpan.wrap(new int[3 * numFaces]);

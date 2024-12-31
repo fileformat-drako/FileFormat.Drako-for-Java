@@ -29,15 +29,15 @@ class AttributeOctahedronTransform extends AttributeTransform
         outData.appendValue(quantizationBits);
     }
     
-    public boolean encodeParameters(EncoderBuffer encoder_buffer)
+    public void encodeParameters(EncoderBuffer encoder_buffer)
+        throws DrakoException
     {
         if (quantizationBits != -1)
         {
             encoder_buffer.encode((byte)quantizationBits);
-            return true;
         }
-        
-        return DracoUtils.failed();
+        else
+            throw DracoUtils.failed();
     }
     
     public PointAttribute generatePortableAttribute(PointAttribute attribute, int[] point_ids, int num_points)
@@ -51,8 +51,7 @@ class AttributeOctahedronTransform extends AttributeTransform
         OctahedronToolBox converter = new OctahedronToolBox();
         final int[] ref0 = new int[1];
         final int[] ref1 = new int[1];
-        if (!converter.setQuantizationBits(quantizationBits))
-            return null;
+        converter.setQuantizationBits(quantizationBits);
         for (int i = 0; i < point_ids.length; ++i)
         {
             int att_val_id = attribute.mappedIndex(point_ids[i]);

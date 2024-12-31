@@ -11,68 +11,48 @@ class SequentialNormalAttributeDecoder extends SequentialIntegerAttributeDecoder
     }
     
     @Override
-    public boolean initialize(PointCloudDecoder decoder, int attributeId)
+    public void initialize(PointCloudDecoder decoder, int attributeId)
+        throws DrakoException
     {
-        if (!super.initialize(decoder, attributeId))
-            return DracoUtils.failed();
+        super.initialize(decoder, attributeId);
         // Currently, this encoder works only for 3-component normal vectors.
         if (this.getAttribute().getComponentsCount() != 3)
-            return DracoUtils.failed();
+            throw DracoUtils.failed();
         // Also the data type must be DTFLOAT32.
         if (this.getAttribute().getDataType() != DataType.FLOAT32)
-            return DracoUtils.failed();
-        return true;
+            throw DracoUtils.failed();
     }
     
     @Override
-    public boolean decodeIntegerValues(int[] pointIds, DecoderBuffer inBuffer)
+    public void decodeIntegerValues(int[] pointIds, DecoderBuffer inBuffer)
+        throws DrakoException
     {
         byte quantizationBits;
-        final byte[] ref0 = new byte[1];
         if (this.decoder.getBitstreamVersion() < 20)
         {
-            if (!inBuffer.decode3(ref0))
-            {
-                quantizationBits = ref0[0];
-                return DracoUtils.failed();
-            }
-            else
-            {
-                quantizationBits = ref0[0];
-            }
-            
+            quantizationBits = inBuffer.decodeU8();
             this.quantizationBits = 0xff & quantizationBits;
         }
         
-        return super.decodeIntegerValues(pointIds, inBuffer);
+        super.decodeIntegerValues(pointIds, inBuffer);
     }
     
     @Override
-    public boolean decodeDataNeededByPortableTransform(int[] pointIds, DecoderBuffer in_buffer)
+    public void decodeDataNeededByPortableTransform(int[] pointIds, DecoderBuffer in_buffer)
+        throws DrakoException
     {
-        final byte[] ref1 = new byte[1];
         if (this.decoder.getBitstreamVersion() >= 20)
         {
-            byte quantization_bits;
-            if (!in_buffer.decode3(ref1))
-            {
-                quantization_bits = ref1[0];
-                return false;
-            }
-            else
-            {
-                quantization_bits = ref1[0];
-            }
-            
+            byte quantization_bits = in_buffer.decodeU8();
             this.quantizationBits = 0xff & quantization_bits;
         }
         
         AttributeOctahedronTransform octahedral_transform = new AttributeOctahedronTransform(quantizationBits);
-        return octahedral_transform.transferToAttribute(this.getPortableAttribute());
+        octahedral_transform.transferToAttribute(this.getPortableAttribute());
     }
     
     @Override
-    protected boolean storeValues(int numPoints)
+    protected void storeValues(int numPoints)
     {
         int maxQuantizedValue = (1 << quantizationBits) - 1;
         float maxQuantizedValueF = (float)maxQuantizedValue;
@@ -92,7 +72,6 @@ class SequentialNormalAttributeDecoder extends SequentialIntegerAttributeDecoder
             outBytePos += entrySize;
         }
         
-        return true;
     }
     
     void octaherdalCoordsToUnitVector(float inS, float inT, float[] outVector)

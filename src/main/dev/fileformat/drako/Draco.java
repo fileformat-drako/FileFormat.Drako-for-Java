@@ -14,6 +14,7 @@ public class Draco
      * @return a {@link dev.fileformat.drako.DracoPointCloud} or {@link dev.fileformat.drako.DracoMesh} instance
      */
     public static DracoPointCloud decode(byte[] data)
+        throws DrakoException
     {
         if (data == null)
             throw new IllegalArgumentException("Argument data cannot be null");
@@ -28,6 +29,7 @@ public class Draco
      * @return Bytes in draco format
      */
     public static byte[] encode(DracoPointCloud m)
+        throws DrakoException
     {
         return Draco.encode(m, new DracoEncodeOptions());
     }
@@ -40,6 +42,7 @@ public class Draco
      * @return Bytes in draco format
      */
     public static byte[] encode(DracoPointCloud m, DracoEncodeOptions options)
+        throws DrakoException
     {
         if (m == null)
             throw new IllegalArgumentException("Argument m cannot be null");
@@ -57,7 +60,7 @@ public class Draco
     }
     
     public static void encode(DracoPointCloud m, DracoEncodeOptions options, Stream stream)
-        throws IOException
+        throws IOException, DrakoException
     {
         if (m == null)
             throw new IllegalArgumentException("Argument m cannot be null");
@@ -70,6 +73,7 @@ public class Draco
     }
     
     static EncoderBuffer encodeImpl(DracoPointCloud m, DracoEncodeOptions options)
+        throws DrakoException
     {
         EncoderBuffer ret = new EncoderBuffer();
         PointCloudEncoder encoder = Draco.createEncoder(m, options);
@@ -109,7 +113,7 @@ public class Draco
     
     private static PointCloudEncoder createEncoder(DracoPointCloud pc, DracoEncodeOptions options)
     {
-        if (pc instanceof DracoMesh)
+        if (pc instanceof DracoMesh && (((DracoMesh)pc).getNumFaces() > 0))
         {
             MeshEncoder encoder;
             if (options.getCompressionLevel() == DracoCompressionLevel.NO_COMPRESSION)

@@ -1,17 +1,19 @@
 package dev.fileformat.drako;
 interface IMeshEdgeBreakerEncoder
 {    
-    boolean init(MeshEdgeBreakerEncoder encoder);
+    void init(MeshEdgeBreakerEncoder encoder);
     
     MeshAttributeCornerTable getAttributeCornerTable(int attId);
     
     MeshAttributeIndicesEncodingData getAttributeEncodingData(int attId);
     
-    boolean generateAttributesEncoder(int attId);
+    void generateAttributesEncoder(int attId)
+        throws DrakoException;
     
-    boolean encodeAttributesEncoderIdentifier(int attEncoderId);
+    void encodeAttributesEncoderIdentifier(int attEncoderId);
     
-    boolean encodeConnectivity();
+    void encodeConnectivity()
+        throws DrakoException;
     
     /**
      *  Returns corner table of the encoded mesh.

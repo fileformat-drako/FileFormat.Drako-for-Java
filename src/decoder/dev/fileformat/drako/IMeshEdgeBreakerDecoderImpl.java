@@ -1,17 +1,19 @@
 package dev.fileformat.drako;
 interface IMeshEdgeBreakerDecoderImpl
 {    
-    boolean init(MeshEdgeBreakerDecoder decoder);
+    void init(MeshEdgeBreakerDecoder decoder);
     
     MeshAttributeCornerTable getAttributeCornerTable(int attId);
     
     MeshAttributeIndicesEncodingData getAttributeEncodingData(int attId);
     
-    boolean createAttributesDecoder(int attDecoderId);
+    void createAttributesDecoder(int attDecoderId)
+        throws DrakoException;
     
-    boolean decodeConnectivity();
+    void decodeConnectivity()
+        throws DrakoException;
     
-    boolean onAttributesDecoded();
+    void onAttributesDecoded();
     
     MeshEdgeBreakerDecoder getDecoder();
     

@@ -86,7 +86,7 @@ public class PointAttribute extends GeometryAttribute
             this.hashCode = src.hashCode;
         }
         
-        static final long serialVersionUID = 908919825L;
+        static final long serialVersionUID = -1950792636L;
         @Override
         public int hashCode()
         {
@@ -280,7 +280,7 @@ public class PointAttribute extends GeometryAttribute
      * @param numAttributeValues Number of the attribute entries to preallocate
      * @return true means successed.
      */
-    public boolean reset(int numAttributeValues)
+    public void reset(int numAttributeValues)
     {
         if (buffer == null)
         {
@@ -294,7 +294,6 @@ public class PointAttribute extends GeometryAttribute
         this.setByteOffset(0);
         // Assign the new buffer to the parent attribute.
         this.numUniqueEntries = numAttributeValues;
-        return true;
     }
     
     public int mappedIndex(int pointIndex)

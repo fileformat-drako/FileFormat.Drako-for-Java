@@ -1,48 +1,40 @@
 package dev.fileformat.drako;
 import dev.fileformat.drako.IntSpan;
-final class Decoding
+class Decoding
 {    
-    static boolean decodeSymbols(int numValues, int numComponents, DecoderBuffer srcBuffer, IntSpan outValues)
+    static void decodeSymbols(int numValues, int numComponents, DecoderBuffer srcBuffer, IntSpan outValues)
+        throws DrakoException
     {
-        final byte[] ref0 = new byte[1];
         if (numValues < 0)
-            return DracoUtils.failed();
+            throw DracoUtils.failed();
         if (numValues == 0)
-            return true;
-        byte scheme;
-        if (!srcBuffer.decode3(ref0))
+            return;
+        byte scheme = srcBuffer.decodeU8();
+        if (scheme == 0)
         {
-            scheme = ref0[0];
-            return DracoUtils.failed();
+            Decoding.decodeTaggedSymbols(numValues, numComponents, srcBuffer, outValues);
+        }
+        else if (scheme == 1)
+        {
+            Decoding.decodeRawSymbols(numValues, srcBuffer, outValues);
         }
         else
-        {
-            scheme = ref0[0];
-        }
-        
-        if (scheme == 0)
-            return Decoding.decodeTaggedSymbols(numValues, numComponents, srcBuffer, outValues);else if (scheme == 1)
-            return Decoding.decodeRawSymbols(numValues, srcBuffer, outValues);
-        return DracoUtils.failed();
+            throw DracoUtils.failed();
     }
     
     static boolean decodeTaggedSymbols(int numValues, int numComponents, DecoderBuffer srcBuffer, IntSpan outValues)
+        throws DrakoException
     {
         RAnsSymbolDecoder tagDecoder = new RAnsSymbolDecoder(5);
-        final long[] ref1 = new long[1];
-        final int[] ref2 = new int[1];
-        if (!tagDecoder.create(srcBuffer))
-            return DracoUtils.failed();
+        final int[] ref0 = new int[1];
+        tagDecoder.create(srcBuffer);
         
-        if (!tagDecoder.startDecoding(srcBuffer))
-            return DracoUtils.failed();
+        tagDecoder.startDecoding(srcBuffer);
         
         if (numValues > 0 && (tagDecoder.getNumSymbols() == 0))
-            return DracoUtils.failed();
+            throw DracoUtils.failed();
         // Wrong number of symbols.
-        long tmp;
-        srcBuffer.startBitDecoding(false, ref1);
-        tmp = ref1[0];
+        long tmp = srcBuffer.startBitDecoding(false);
         int valueId = 0;
         for (int i = 0; i < numValues; i += numComponents)
         {
@@ -51,14 +43,14 @@ final class Decoding
             for (int j = 0; j < numComponents; ++j)
             {
                 int val;
-                if (!srcBuffer.decodeLeastSignificantBits32(bitLength, ref2))
+                if (!srcBuffer.decodeLeastSignificantBits32(bitLength, ref0))
                 {
-                    val = ref2[0];
-                    return DracoUtils.failed();
+                    val = ref0[0];
+                    throw DracoUtils.failed();
                 }
                 else
                 {
-                    val = ref2[0];
+                    val = ref0[0];
                 }
                 
                 outValues.put(valueId++, val);
@@ -71,30 +63,18 @@ final class Decoding
         return true;
     }
     
-    static boolean decodeRawSymbols(int numValues, DecoderBuffer srcBuffer, IntSpan outValues)
+    static void decodeRawSymbols(int numValues, DecoderBuffer srcBuffer, IntSpan outValues)
+        throws DrakoException
     {
-        byte maxBitLength;
-        final byte[] ref3 = new byte[1];
-        if (!srcBuffer.decode3(ref3))
-        {
-            maxBitLength = ref3[0];
-            return DracoUtils.failed();
-        }
-        else
-        {
-            maxBitLength = ref3[0];
-        }
-        
+        byte maxBitLength = srcBuffer.decodeU8();
         RAnsSymbolDecoder decoder = new RAnsSymbolDecoder(0xff & maxBitLength);
-        if (!decoder.create(srcBuffer))
-            return DracoUtils.failed();
+        decoder.create(srcBuffer);
         
         if (numValues > 0 && (decoder.getNumSymbols() == 0))
-            return DracoUtils.failed();
+            throw DracoUtils.failed();
         // Wrong number of symbols.
         
-        if (!decoder.startDecoding(srcBuffer))
-            return DracoUtils.failed();
+        decoder.startDecoding(srcBuffer);
         for (int i = 0; i < numValues; ++i)
         {
             int value = decoder.decodeSymbol();
@@ -102,7 +82,6 @@ final class Decoding
         }
         
         decoder.endDecoding();
-        return true;
     }
     
     public static void convertSymbolsToSignedInts(IntSpan symbols, IntSpan result)
@@ -128,109 +107,76 @@ final class Decoding
      *  Decodes a specified integer as varint. Note that the IntTypeT must be the
      *  same as the one used in the corresponding EncodeVarint() call.
      *
-     * @param out_val 
      * @param buffer 
      */
-    public static boolean decodeVarint(int[] out_val, DecoderBuffer buffer)
+    public static int decodeVarintU32(DecoderBuffer buffer)
+        throws DrakoException
     {
-        byte in_;
-        final byte[] ref4 = new byte[1];
-        if (!buffer.decode3(ref4))
-        {
-            in_ = ref4[0];
-            out_val[0] = 0;
-            return DracoUtils.failed();
-        }
-        else
-        {
-            in_ = ref4[0];
-        }
-        
+        byte in_ = buffer.decodeU8();
+        int out_val;
         
         if ((0xff & in_ & (1 << 7)) != 0)
         {
             // Next byte is available, decode it first.
-            if (!Decoding.decodeVarint(out_val, buffer))
-                return DracoUtils.failed();
+            out_val = Decoding.decodeVarintU32(buffer);
             // Append decoded info from this byte.
-            out_val[0] <<= 7;
-            out_val[0] |= (int)(0xff & in_ & ((1 << 7) - 1));
+            out_val <<= 7;
+            out_val |= (int)(0xff & in_ & ((1 << 7) - 1));
         }
         else
         {
             // Last byte reached
-            out_val[0] = 0xff & in_;
+            out_val = 0xff & in_;
         }
         
-        return true;
+        return out_val;
     }
     
-    public static boolean decodeVarint(short[] out_val, DecoderBuffer buffer)
+    public static short decodeVarintU16(DecoderBuffer buffer)
+        throws DrakoException
     {
-        byte in_;
-        final byte[] ref5 = new byte[1];
-        if (!buffer.decode3(ref5))
-        {
-            in_ = ref5[0];
-            out_val[0] = 0;
-            return DracoUtils.failed();
-        }
-        else
-        {
-            in_ = ref5[0];
-        }
-        
+        byte in_ = buffer.decodeU8();
+        short out_val;
         
         if ((0xff & in_ & (1 << 7)) != 0)
         {
             // Next byte is available, decode it first.
-            if (!Decoding.decodeVarint(out_val, buffer))
-                return DracoUtils.failed();
+            out_val = Decoding.decodeVarintU16(buffer);
             // Append decoded info from this byte.
-            out_val[0] <<= 7;
-            out_val[0] |= (short)(0xff & in_ & ((1 << 7) - 1));
+            out_val <<= 7;
+            out_val |= (short)(0xff & in_ & ((1 << 7) - 1));
         }
         else
         {
             // Last byte reached
-            out_val[0] = (short)(0xff & in_);
+            out_val = (short)(0xff & in_);
         }
         
-        return true;
+        return out_val;
     }
     
-    public static boolean decodeVarint(long[] out_val, DecoderBuffer buffer)
+    public static long decodeVarintU64(DecoderBuffer buffer)
+        throws DrakoException
     {
-        byte in_;
-        final byte[] ref6 = new byte[1];
-        if (!buffer.decode3(ref6))
-        {
-            in_ = ref6[0];
-            out_val[0] = 0L;
-            return DracoUtils.failed();
-        }
-        else
-        {
-            in_ = ref6[0];
-        }
-        
+        byte in_ = buffer.decodeU8();
+        long out_val;
         
         if ((0xff & in_ & (1 << 7)) != 0)
         {
             // Next byte is available, decode it first.
-            if (!Decoding.decodeVarint(out_val, buffer))
-                return DracoUtils.failed();
+            
+            out_val = Decoding.decodeVarintU64(buffer);
             // Append decoded info from this byte.
-            out_val[0] <<= 7L;
-            out_val[0] |= 0xffffffffl & (int)(0xff & in_ & ((1 << 7) - 1));
+            out_val <<= 7L;
+            out_val |= 0xffffffffl & (int)(0xff & in_ & ((1 << 7) - 1));
         }
         else
         {
             // Last byte reached
-            out_val[0] = 0xff & in_;
+            out_val = 0xff & in_;
         }
         
-        return true;
+        return out_val;
     }
     
     
