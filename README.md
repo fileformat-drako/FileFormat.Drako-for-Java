@@ -11,7 +11,7 @@ Add the following code in your pom.xml:
 <dependency>
   <groupId>dev.fileformat</groupId>
   <artifactId>drako</artifactId>
-  <version>1.4.1</version>
+  <version>1.4.2</version>
 </dependency>
 ```
 
